@@ -43,9 +43,14 @@ RK_LOOP:  DO n_k=1,rk_steps
           t=t+dt/REAL(rk_steps,KIND=rk)
 
 
+
           IF (MOD(it-1_ik,it_stat)==0_ik) stats_time=.true.
 
           CALL partial_right_hand_side
+
+          IF (n_k==1_ik) THEN
+          CALL grid_forcing_update
+          ENDIF
 
           CALL nonlinear
 

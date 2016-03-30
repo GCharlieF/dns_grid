@@ -265,7 +265,7 @@ YN300: DO yn=1,nyp,nyp/nc
              +fw_next(1,zn+nzp/nc)
 
         ENDIF
-        IF((z .GT. nzp-nzp/nc) .AND. (y.GT.nyp-nyp/nc))then
+        IF((z .GT. nzp-nzp/nc) .AND. (y.GT.nyp-nyp/nc)) THEN
 
         ao(1)=fu_next(yn,zn)
         an(1)=fu_next(yn,zn)-fu_next(yn,1)
@@ -305,7 +305,7 @@ YN300: DO yn=1,nyp,nyp/nc
         ENDDO YN300
         ENDDO ZN300
 
-
+      
  !       address = 'Variables = "y","z","f1","f2","f3","f1n","f2n","f3n"'
  !       write(777,*) address
  !       address = 'ZONE I=1234 J=1234'
@@ -343,7 +343,7 @@ implicit none
  dz=REAL(nc,KIND=rk)/REAL(nzp,KIND=rk)
 
  !After dt_forc iterations updates f_next with new values and put the old ones in f_prev
-
+      print *,'adv'
  IF ((it/=1).AND.(MOD(it-1_ik,dt_forc)==0_ik)) THEN
   fu_prev=fu_next
   fv_prev=fv_next
@@ -433,7 +433,8 @@ implicit none
         as(3)=fw_next(yn,zn)-fw_next(1,zn)
         ak(3)=fw_next(yn,zn)-fw_next(yn,zn+nzp/nc)-fw_next(1,zn)&
              +fw_next(1,zn+nzp/nc)
-       IF((z .GT. nzp-nzp/nc) .AND. (y.GT.nyp-nyp/nc))then
+       ENDIF
+       IF((z .GT. nzp-nzp/nc) .AND. (y.GT.nyp-nyp/nc)) THEN
 
              ao(1)=fu_next(yn,zn)
              an(1)=fu_next(yn,zn)-fu_next(yn,1)
@@ -453,8 +454,9 @@ implicit none
              ak(3)=fw_next(yn,zn)-fw_next(yn,1)-fw_next(1,zn)&
                   +fw_next(1,1)
 
-             ENDIF
         ENDIF
+
+
           fu_next(y,z)=ao(1)-3_rk*as(1)*yy**2-3_rk*an(1)*zz**2&
                 +2_rk*as(1)*yy**3+2_rk*an(1)*zz**3-6_rk*ak(1)*(yy**3)*(zz**2)&
                 -6_rk*ak(1)*(yy**2)*(zz**3)+9_rk*ak(1)*(yy**2)*(zz**2)&
@@ -482,20 +484,20 @@ implicit none
   fv=t_weight(1)*fv_prev+t_weight(2)*fv_next
   fw=t_weight(1)*fw_prev+t_weight(2)*fw_next
 
-
- !       address = 'Variables = "y","z","f1","f2","f3"'
- !       write(777,*) address
- !       address = 'ZONE I=1234 J=1234'
- !       write(address(08:11),1001) nyp
- !       write(address(15:18),1001) nzp
- ! 1001  format(i4.4)
- !       write(777,*) address
- !       do 4000 z=1,nzp
- !       do 4000 y=1,nyp
- !       write(777,*)float(y),float(z),fu(y,z),fv(y,z),fw(y,z)
- ! 4000  continue
- !       stop
-
+ if (it==31) then
+       address = 'Variables = "y","z","f1","f2","f3"'
+       write(777,*) address
+       address = 'ZONE I=1234 J=1234'
+       write(address(08:11),1001) nyp
+       write(address(15:18),1001) nzp
+ 1001  format(i4.4)
+       write(777,*) address
+       do 4000 z=1,nzp
+       do 4000 y=1,nyp
+       write(777,*)float(y),float(z),fu(y,z),fv(y,z),fw(y,z)
+ 4000  continue
+       stop
+ endif
 
 
 END SUBROUTINE grid_forcing_update

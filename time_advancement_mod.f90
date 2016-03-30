@@ -93,7 +93,7 @@ SUBROUTINE nonlinear
  implicit none
  INTEGER(KIND=ik)               :: xx,yy,zz,jj,kk
  COMPLEX(KIND=rk)               :: k_quad,ac1,ac2,ac3,div
- REAL(KIND=rk)                  :: norm
+ REAL(KIND=rk)                  :: norm,ff1,ff2,ff3
  REAL(KIND=rk)                  :: a1,a2,a3,b1,b2,b3
  REAL(KIND=rk)                  :: xf_min,xf_max,delta_xf   !forcing geom
  REAL(KIND=rk)                  :: coeff,amp_x,aa
@@ -133,7 +133,7 @@ SUBROUTINE nonlinear
 ! Compute non-linear term in the phisical space
 ! If within the forced region adds the forcing term multiplied by
 ! a gaussian distribution function of xx
-
+         ff1=0.;ff2=0.;ff3=0.
   ZL20 : DO zz=1,nzp
   YL20 : DO yy=1,nyp
   XL20 : DO xx=1,nxp
@@ -153,7 +153,7 @@ SUBROUTINE nonlinear
       !    (/ hh(xx,yy,zz,1), hh(xx,yy,zz,2), hh(xx,yy,zz,3) /))
 
 
-         IF (REAL(xx,KIND=rk) > xf_min .AND. REAL(xx,KIND=rk) < xf_max) THEN
+         IF (REAL(xx,KIND=rk) > xf_min-nxp/8 .AND. REAL(xx,KIND=rk) < xf_max +nxp/8) THEN
 
       !    amp_x=coeff*EXP(- (REAL(xx-nxp/2,KIND=rk)*xl/REAL(nxp,KIND=rk) )**2/sigma)
          amp_x=0.5*(1 + TANH(aa*(delta_xf-abs(REAL(nxp/2-xx,KIND=rk))*xl/REAL(nxp,KIND=rk) )))
@@ -161,13 +161,21 @@ SUBROUTINE nonlinear
          hh(xx,yy,zz,1)=hh(xx,yy,zz,1) + fu(yy,zz)*amp_x
          hh(xx,yy,zz,2)=hh(xx,yy,zz,2) + fv(yy,zz)*amp_x
          hh(xx,yy,zz,3)=hh(xx,yy,zz,3) + fw(yy,zz)*amp_x
-
+         ff1=ff1+(fu(yy,zz)*amp_x)**2/REAL(nxp*nyp*nzp,KIND=rk)
+         ff2=ff2+(fv(yy,zz)*amp_x)**2/REAL(nxp*nyp*nzp,KIND=rk)
+         ff3=ff3+(fw(yy,zz)*amp_x)**2/REAL(nxp*nyp*nzp,KIND=rk)
          ENDIF
 
   ENDDO XL20
   ENDDO YL20
   ENDDO ZL20
-
+         print *,'ff',ff1,ff2,ff3,hh(nxp/2,nyp/2,nzp/2,1)
+      !  do xx=1,nxp
+      !    IF (REAL(xx,KIND=rk) > xf_min-nxp/8 .AND. REAL(xx,KIND=rk) < xf_max +nxp/8) THEN
+      !  write(19,*)xx,fu(24,24)*0.5_rk*(1 + TANH(aa*(delta_xf-abs(REAL(nxp/2-xx,KIND=rk))*xl/REAL(nxp,KIND=rk) ))),fu(xx,xx)
+      !   endif
+      !  enddo
+      !  stop
 !!!   CFL
 
 
@@ -193,7 +201,7 @@ SUBROUTINE nonlinear
             xx=1
             jj=day(yy)
             kk=daz(zz)
-              IF(yy==1 .AND. zz==1) THEN
+              IF(jj==1 .AND. kk==1) THEN
                 hh_C(xx,jj,kk,1)=0._rk
                 hh_C(xx,jj,kk,2)=0._rk
                 hh_C(xx,jj,kk,3)=0._rk
@@ -234,12 +242,11 @@ SUBROUTINE nonlinear
 
 
  ENDDO XL31
+
  ENDDO YL30
  ENDDO ZL30
 
- IF (n_k==1_ik) THEN
- CALL grid_forcing_update
- ENDIF
+
 
 
 END SUBROUTINE nonlinear
