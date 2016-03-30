@@ -130,20 +130,24 @@ MODULE fft_mod
  !!!. . . . . . . . . . BACKWARD FFT VELOCITY FIELD. . . . . . . . . . . .
 SUBROUTINE B_FFT(vf_C,vf)
  implicit none
- REAL(C_DOUBLE), DIMENSION(:,:,:,:)          :: vf
- COMPLEX(C_DOUBLE),DIMENSION(:,:,:,:)        :: vf_C
+ REAL(C_DOUBLE), DIMENSION(:,:,:,:)                  :: vf
+ COMPLEX(C_DOUBLE_COMPLEX),DIMENSION(:,:,:,:)        :: vf_C
 
 
 !!!.   .    .   .    .   .    .   .    .   .    .   .    .   .    .   .
+      !!De-aliasing
+      IF (al==1) vf_C(nx/2+1:nxp/2,ny/2+1:ny/2+ny/2,nz/2+1:nz/2+nz/2,:)=CMPLX(0._RK,0._RK)
+      ! IF (al==1) vf_C(nx/2+1:nxp,ny+1:nyp,nz+1:nzp,:)=CMPLX(0._RK,0._RK)
 
       CALL fftw_execute_dft_c2r(plan_ub,vf_C,vf)
+
 END SUBROUTINE B_FFT
 !!!. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 !!!. . . . . . . . . . FORWARD FFT VELOCITY FIELD. . . . . . . . . . . . . . .
 SUBROUTINE F_FFT(vf,vf_C)
  implicit none
- REAL(C_DOUBLE), DIMENSION(:,:,:,:)          :: vf
- COMPLEX(C_DOUBLE),DIMENSION(:,:,:,:)        :: vf_C
+ REAL(C_DOUBLE), DIMENSION(:,:,:,:)                  :: vf
+ COMPLEX(C_DOUBLE_COMPLEX),DIMENSION(:,:,:,:)        :: vf_C
 
 
 !!!.   .    .   .    .   .    .   .    .   .    .   .    .   .    .   .

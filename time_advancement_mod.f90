@@ -5,6 +5,7 @@ MODULE time_advancement_mod
 USE parameters_mod
 USE variables_and_IO_mod !, ONLY: i_kutta,Re,dt
 USE fft_mod
+USE grid_forcing_mod
 implicit none
 REAL(KIND=rk),DIMENSION(4,3:4)            :: ark,brk
 INTEGER(KIND=ik),DIMENSION(0:3)           :: i_rk
@@ -62,9 +63,9 @@ INTEGER(KIND=ik)                             :: zz,yy,xx,xr,xi
 
  ! n_k=i_rk(mod(it,i_kutta))
 
- pnrk=CMPLX(2_rk*Re/(dt*ark(n_k,rk_steps)+dt*brk(n_k,rk_steps)),0._rk)
+ pnrk=2_rk*Re/(dt*ark(n_k,rk_steps)+dt*brk(n_k,rk_steps))
 
- qnrk=CMPLX(dt*brk(n_k,rk_steps),0._rk)*pnrk
+ qnrk=dt*brk(n_k,rk_steps)*pnrk
 
  ZL10: DO zz=1,nz
  YL10: DO yy=1,ny
@@ -77,6 +78,13 @@ INTEGER(KIND=ik)                             :: zz,yy,xx,xr,xi
  ENDDO XL10
  ENDDO YL10
  ENDDO ZL10
+ print *,'prhs',puu_C(7,12,12,1)
+ print *,'prhs',uu_C(7,12,12,1)
+  ! do xx=2,nx/2
+  !       write(19,*)xx,uu_C(xx,12,12,1)
+  !       write(19,*)xx,puu_C(xx,12,12,1)
+  !     enddo
+  !     stop
 END SUBROUTINE partial_right_hand_side
 
 !! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -89,16 +97,16 @@ SUBROUTINE nonlinear
  REAL(KIND=rk)                  :: norm
  REAL(KIND=rk)                  :: a1,a2,a3,b1,b2,b3
  REAL(KIND=rk)                  :: xf_min,xf_max,delta_xf   !forcing geom
- REAL(KIND=rk)                  :: coeff,amp_x
+ REAL(KIND=rk)                  :: coeff,amp_x,aa
  REAL(KIND=rk)                  :: CFL,dx,dy,dz,u_max,v_max,w_max
 
 
  norm=1_rk/REAL(nxp*nyp*nzp,KIND=rk)
 
- ! delta_xf=0.5_rk*xl*thick
- ! xf_min=(-delta_xf + xl/2_rk) * REAL(nxp,KIND=rk)/ xl  !left bound of the forced region
- ! xf_max=(+delta_xf + xl/2_rk) * REAL(nxp,KIND=rk)/ xl  !right bound of the force region
- !
+ delta_xf=0.5_rk*xl*thick
+ xf_min=(-delta_xf + xl/2_rk) * REAL(nxp,KIND=rk)/ xl  !left bound of the forced region
+ xf_max=(+delta_xf + xl/2_rk) * REAL(nxp,KIND=rk)/ xl  !right bound of the force region
+ aa=1.5*pi
  ! coeff=1_rk/(sigma*SQRT(2_rk*pi))
 
 
@@ -114,7 +122,13 @@ SUBROUTINE nonlinear
 
     CALL B_FFT(hh_C,hh)
     CALL B_FFT(uu_C,uu)
-
+    print *,uu(12,12,12,1)
+    print *,hh(12,12,12,1)
+    ! do xx=2,nxp
+    !       write(19,*)xx,uu(xx,12,12,1)
+    !       ! write(19,*)xx,puu_C(xx,12,12,1)
+    !     enddo
+    !     stop
 ! Compute non-linear term in the phisical space
 ! If within the forced region adds the forcing term multiplied by
 ! a gaussian distribution function of xx
@@ -134,16 +148,20 @@ SUBROUTINE nonlinear
          hh(xx,yy,zz,2)=a3*b1-a1*b3
          hh(xx,yy,zz,3)=a1*b2-a2*b1
 
+      !    hh(xx,yy,zz,:)=cross((/ uu(xx,yy,zz,1), uu(xx,yy,zz,2), uu(xx,yy,zz,3) /),&
+      !    (/ hh(xx,yy,zz,1), hh(xx,yy,zz,2), hh(xx,yy,zz,3) /))
 
-      !    IF (REAL(xx,KIND=rk) > xf_min .AND. REAL(xx,KIND=rk) < xf_max) THEN
-         !
+
+         IF (REAL(xx,KIND=rk) > xf_min .AND. REAL(xx,KIND=rk) < xf_max) THEN
+
       !    amp_x=coeff*EXP(- (REAL(xx-nxp/2,KIND=rk)*xl/REAL(nxp,KIND=rk) )**2/sigma)
-         !
-      !    hh(xx,yy,zz,1)=hh(xx,yy,zz,1) + fu(yy,zz)*amp_x
-      !    hh(xx,yy,zz,2)=hh(xx,yy,zz,2) + fv(yy,zz)*amp_x
-      !    hh(xx,yy,zz,3)=hh(xx,yy,zz,3) + fw(yy,zz)*amp_x
-         !
-      !    ENDIF
+         amp_x=0.5*(1 + TANH(aa*(delta_xf-abs(REAL(nxp/2-xx,KIND=rk))*xl/REAL(nxp,KIND=rk) )))
+
+         hh(xx,yy,zz,1)=hh(xx,yy,zz,1) + fu(yy,zz)*amp_x
+         hh(xx,yy,zz,2)=hh(xx,yy,zz,2) + fv(yy,zz)*amp_x
+         hh(xx,yy,zz,3)=hh(xx,yy,zz,3) + fw(yy,zz)*amp_x
+
+         ENDIF
 
   ENDDO XL20
   ENDDO YL20
@@ -157,17 +175,17 @@ SUBROUTINE nonlinear
    u_max=maxval(uu(:,:,:,1))
    v_max=maxval(uu(:,:,:,2))
    w_max=maxval(uu(:,:,:,3))
+
    dx=xl/REAL(nxp,KIND=rk)
    dy=yl/REAL(nyp,KIND=rk)
    dz=zl/REAL(nzp,KIND=rk)
-   print *,dx,dy,dz
    CFL = u_max*(dt/dx)+v_max*(dt/dy)+w_max*(dt/dz)
    CFL = CFL*pi
    print *,'CFL =',CFL,u_max,v_max,w_max
 
 
    CALL F_FFT(hh,hh_C)
-
+   CALL F_FFT(uu,uu_C)
 
  ZL30 : DO zz=1,nz
  YL30 :    DO yy=1,ny
@@ -216,13 +234,18 @@ SUBROUTINE nonlinear
  ENDDO YL30
  ENDDO ZL30
 
+ IF (n_k==1_ik) THEN
+ CALL grid_forcing_update
+ ENDIF
+
+
 END SUBROUTINE nonlinear
 
 !! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 !! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 SUBROUTINE linear
  implicit none
- INTEGER(KIND=ik)               :: zz,yy,xx,xr,xi
+ INTEGER(KIND=ik)               :: zz,yy,xx
  COMPLEX(KIND=rk)               :: k_quad
  REAL(KIND=rk)                  :: den,pnrk,qnrk
 
@@ -231,7 +254,6 @@ SUBROUTINE linear
  pnrk=2_rk*Re/(dt*ark(n_k,rk_steps)+dt*brk(n_k,rk_steps))
 
  qnrk=dt*ark(n_k,rk_steps)*pnrk
-
 
  ZL10 : DO zz=1,nz
  YL10 : DO yy=1,ny
@@ -252,3 +274,4 @@ END MODULE time_advancement_mod
 !!!.....................................................................
 !!TODO k_quad,k1,k2,k3 vanno definiti come complessi, linear e prhs vanno cambiati
 !!  per operazioni con numeri complessi, rename a1,a2,a3,ss complessi
+!!TODO routines per statistiche: energia,dissipazione,potenza

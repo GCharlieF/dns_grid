@@ -8,16 +8,16 @@ MODULE variables_and_IO_mod
   implicit none
 
 !!Grid forcing variables
-  ! REAL(KIND=rk),DIMENSION(:,:),ALLOCATABLE       :: fu_prev,fv_prev,fw_prev      !forcings
-  ! REAL(KIND=rk),DIMENSION(:,:),ALLOCATABLE       :: fu_next,fv_next,fw_next
-  ! REAL(KIND=rk),DIMENSION(:,:),ALLOCATABLE       :: fu,fv,fw
+  REAL(KIND=rk),DIMENSION(:,:),ALLOCATABLE       :: fu_prev,fv_prev,fw_prev      !forcings
+  REAL(KIND=rk),DIMENSION(:,:),ALLOCATABLE       :: fu_next,fv_next,fw_next
+  REAL(KIND=rk),DIMENSION(:,:),ALLOCATABLE       :: fu,fv,fw
   REAL(KIND=rk)                                  :: f_amp
   REAL(KIND=rk)                                  :: t_forz
   REAL(KIND=rk)                                  :: thick
   REAL(KIND=RK),DIMENSION(2)                     :: t_weight
 
   INTEGER(KIND=ik)                               :: nc
-  INTEGER(KIND=ik)                               :: nforz
+  INTEGER(KIND=ik)                               :: dt_forc
   CHARACTER(LEN=10)                              :: file_gr_rest
 
 !!  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
@@ -81,10 +81,11 @@ MODULE variables_and_IO_mod
        READ(1,*)  nc
        READ(1,*)  thick
        READ(1,*)  i_couple
+
       CLOSE(1)
    !multiply domain dimensions by pi
        xl=xl*pi; yl=yl*pi; zl=zl*pi
-       al=0.
+       al=0_ik
    !assigns n.er of real points in case the dealiasing is on (al=1)
       IF (rk_steps /= 3 .AND. rk_steps /= 4) rk_steps=3
        nxp=nx+al*nx/2 ; nyp=ny+al*ny/2 ; nzp=nz+al*nz/2
@@ -92,25 +93,26 @@ MODULE variables_and_IO_mod
       !  itmax=itmax*rk_steps
       !  it_out=it_out*rk_steps
       !  it_stat=it_stat*rk_steps
-      !  nforz=rk_steps*int(t_forz/dt,KIND=4)
+      !  dt_forc=rk_steps*int(t_forz/dt,KIND=4)
 
-       nforz=int(t_forz/dt,KIND=4)
+       dt_forc=int(t_forz/dt,KIND=ik)
        it_wrt=itmin+it_out
 
          write(*,*) 'initial parameters'
          write(*,*) 'xl,yl,zl:',xl,yl,zl
+         write(*,*) 'Grid points:',nxp,nyp,nzp,nx,ny,nz
          write(*,*) 'Re:',Re
          write(*,*) 'dt',dt
          write(*,*) 'f_amp',f_amp
-         write(*,*) 'sigma',sigma
          write(*,*) 'iseed',iseed(1)
          write(*,*)  'it mx/min', itmax,'/',itmin
          write(*,*)  'it out', it_wrt
          write(*,*) 'n_step', rk_steps
-         write(*,*) 'n_forz', nforz
+         write(*,*) 'n_forz', dt_forc
          write(*,*) 'n_celle', nc
          write(*,*) 'thcik', thick
-         write(*,*) 'i_couple',i_couple
+        !  write(*,*) 'i_couple',i_couple
+
    !allocation of variables
 !! De-aliasing?
 
@@ -124,7 +126,16 @@ SUBROUTINE memory_initialization
  ALLOCATE(kx(1:nx/2))
  ALLOCATE(ky(1:ny))
  ALLOCATE(kz(1:nz))
-
+ !allocation of forcing variables
+ ALLOCATE(fu(1:nyp,1:nzp))
+ ALLOCATE(fv(1:nyp,1:nzp))
+ ALLOCATE(fw(1:nyp,1:nzp))
+ ALLOCATE(fu_prev(1:nyp,1:nzp))
+ ALLOCATE(fv_prev(1:nyp,1:nzp))
+ ALLOCATE(fw_prev(1:nyp,1:nzp))
+ ALLOCATE(fu_next(1:nyp,1:nzp))
+ ALLOCATE(fv_next(1:nyp,1:nzp))
+ ALLOCATE(fw_next(1:nyp,1:nzp))
 END SUBROUTINE memory_initialization
 !!!. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
