@@ -24,8 +24,6 @@ END FUNCTION cross
 
 !!!. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
-
-
 !! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 SUBROUTINE rk_initialize
       !Runge-Kutta 3rd order
@@ -59,7 +57,7 @@ SUBROUTINE partial_right_hand_side
 implicit none
 COMPLEX(KIND=rk)                             :: k_quad
 REAL(KIND=rk)                                :: pnrk,qnrk
-INTEGER(KIND=ik)                             :: zz,yy,xx,xr,xi
+INTEGER(KIND=ik)                             :: zz,yy,xx,jj,kk
 
  ! n_k=i_rk(mod(it,i_kutta))
 
@@ -70,14 +68,15 @@ INTEGER(KIND=ik)                             :: zz,yy,xx,xr,xi
  ZL10: DO zz=1,nz
  YL10: DO yy=1,ny
  XL10: DO xx=1,nx/2
-
+       jj=day(yy)
+       kk=daz(zz)
        k_quad=kx(xx)**2+ky(yy)**2+kz(zz)**2
-       puu_C(xx,yy,zz,:)=(pnrk+k_quad)*uu_C(xx,yy,zz,:)+qnrk*hh_C(xx,yy,zz,:)
-
+       puu_C(xx,yy,zz,:)=(pnrk+k_quad)*uu_C(xx,jj,kk,:)+qnrk*hh_C(xx,jj,kk,:)
 
  ENDDO XL10
  ENDDO YL10
  ENDDO ZL10
+
  print *,'prhs',puu_C(7,12,12,1)
  print *,'prhs',uu_C(7,12,12,1)
   ! do xx=2,nx/2
@@ -92,7 +91,7 @@ END SUBROUTINE partial_right_hand_side
 !! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 SUBROUTINE nonlinear
  implicit none
- INTEGER(KIND=ik)               :: xx,yy,zz,xr,xi
+ INTEGER(KIND=ik)               :: xx,yy,zz,jj,kk
  COMPLEX(KIND=rk)               :: k_quad,ac1,ac2,ac3,div
  REAL(KIND=rk)                  :: norm
  REAL(KIND=rk)                  :: a1,a2,a3,b1,b2,b3
@@ -114,8 +113,10 @@ SUBROUTINE nonlinear
  ZL10 : DO zz=1,nz
  YL10 :    DO yy=1,ny
  XL10 :       DO xx=1,nx/2
-             hh_C(xx,yy,zz,:)=cross((/ kx(xx), ky(yy), kz(zz) /),&
-             (/ uu_C(xx,yy,zz,1), uu_C(xx,yy,zz,2), uu_C(xx,yy,zz,3) /))
+             jj=day(yy)
+             kk=daz(zz)
+             hh_C(xx,jj,kk,:)=cross((/ kx(xx), ky(yy), kz(zz) /),&
+             (/ uu_C(xx,jj,kk,1), uu_C(xx,jj,kk,2), uu_C(xx,jj,kk,3) /))
               ENDDO XL10
           ENDDO YL10
        ENDDO ZL10
@@ -190,44 +191,46 @@ SUBROUTINE nonlinear
  ZL30 : DO zz=1,nz
  YL30 :    DO yy=1,ny
             xx=1
+            jj=day(yy)
+            kk=daz(zz)
               IF(yy==1 .AND. zz==1) THEN
-                hh_C(xx,yy,zz,1)=0._rk
-                hh_C(xx,yy,zz,2)=0._rk
-                hh_C(xx,yy,zz,3)=0._rk
+                hh_C(xx,jj,kk,1)=0._rk
+                hh_C(xx,jj,kk,2)=0._rk
+                hh_C(xx,jj,kk,3)=0._rk
               ELSE
-                ac1=hh_C(xx,yy,zz,1)
-                ac2=hh_C(xx,yy,zz,2)
-                ac3=hh_C(xx,yy,zz,3)
+                ac1=hh_C(xx,jj,kk,1)
+                ac2=hh_C(xx,jj,kk,2)
+                ac3=hh_C(xx,jj,kk,3)
 
                 k_quad=kx(xx)**2+ky(yy)**2+kz(zz)**2
                 k_quad=1./k_quad
 
-                div=kx(xx)*hh_C(xx,yy,zz,1)&
-                   +ky(yy)*hh_C(xx,yy,zz,2)&
-                   +kz(zz)*hh_C(xx,yy,zz,3)
+                div=kx(xx)*hh_C(xx,jj,kk,1)&
+                   +ky(yy)*hh_C(xx,jj,kk,2)&
+                   +kz(zz)*hh_C(xx,jj,kk,3)
 
 
-                hh_C(xx,yy,zz,1)=ac1-div*kx(xx)*k_quad
-                hh_C(xx,yy,zz,2)=ac2-div*ky(yy)*k_quad
-                hh_C(xx,yy,zz,3)=ac3-div*kz(zz)*k_quad
+                hh_C(xx,jj,kk,1)=ac1-div*kx(xx)*k_quad
+                hh_C(xx,jj,kk,2)=ac2-div*ky(yy)*k_quad
+                hh_C(xx,jj,kk,3)=ac3-div*kz(zz)*k_quad
               ENDIF
 
  XL31 :       DO xx=2,nx/2
 
-              ac1=hh_C(xx,yy,zz,1)
-              ac2=hh_C(xx,yy,zz,2)
-              ac3=hh_C(xx,yy,zz,3)
+              ac1=hh_C(xx,jj,kk,1)
+              ac2=hh_C(xx,jj,kk,2)
+              ac3=hh_C(xx,jj,kk,3)
 
                k_quad=kx(xx)**2+ky(yy)**2+kz(zz)**2
                k_quad=1./k_quad
 
-               div=kx(xx)*hh_C(xx,yy,zz,1)&
-                  +ky(yy)*hh_C(xx,yy,zz,2)&
-                  +kz(zz)*hh_C(xx,yy,zz,3)
+               div=kx(xx)*hh_C(xx,jj,kk,1)&
+                  +ky(yy)*hh_C(xx,jj,kk,2)&
+                  +kz(zz)*hh_C(xx,jj,kk,3)
 
-                  hh_C(xx,yy,zz,1)=ac1-div*kx(xx)*k_quad
-                  hh_C(xx,yy,zz,2)=ac2-div*ky(yy)*k_quad
-                  hh_C(xx,yy,zz,3)=ac3-div*kz(zz)*k_quad
+                  hh_C(xx,jj,kk,1)=ac1-div*kx(xx)*k_quad
+                  hh_C(xx,jj,kk,2)=ac2-div*ky(yy)*k_quad
+                  hh_C(xx,jj,kk,3)=ac3-div*kz(zz)*k_quad
 
 
  ENDDO XL31
@@ -245,7 +248,7 @@ END SUBROUTINE nonlinear
 !! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 SUBROUTINE linear
  implicit none
- INTEGER(KIND=ik)               :: zz,yy,xx
+ INTEGER(KIND=ik)               :: zz,yy,xx,jj,kk
  COMPLEX(KIND=rk)               :: k_quad
  REAL(KIND=rk)                  :: den,pnrk,qnrk
 
@@ -258,9 +261,11 @@ SUBROUTINE linear
  ZL10 : DO zz=1,nz
  YL10 : DO yy=1,ny
  XL10 : DO xx=1,nx/2
+               jj=day(yy)
+               kk=daz(zz)
                k_quad=kx(xx)**2+ky(yy)**2+kz(zz)**2
                den=1./(pnrk-k_quad)
-               uu_C(xx,yy,zz,:)=(puu_C(xx,yy,zz,:)+qnrk*hh_C(xx,yy,zz,:))*den
+               uu_C(xx,jj,kk,:)=(puu_C(xx,yy,zz,:)+qnrk*hh_C(xx,jj,kk,:))*den
  ENDDO XL10
  ENDDO YL10
  ENDDO ZL10

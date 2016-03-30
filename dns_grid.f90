@@ -26,6 +26,7 @@ CALL wave_numbers
 CALL read_field
 CALL re_indexing
 CALL rk_initialize
+CALL dealiased_indeces
 CALL grid_forcing_init
 
 t=REAL(itmin,KIND=rk)*dt

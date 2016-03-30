@@ -26,6 +26,7 @@ MODULE variables_and_IO_mod
    INTEGER(KIND=ik)                               :: nxp,nyp,nzp   !real points
    REAL(KIND=rk)                                  :: xl,yl,zl   !domain's dimensions
    COMPLEX(KIND=rk),DIMENSION(:),ALLOCATABLE      :: kx,ky,kz
+   INTEGER(KIND=ik),DIMENSION(:),ALLOCATABLE      :: day,daz
    COMPLEX(C_DOUBLE_COMPLEX), dimension(:,:,:,:),ALLOCATABLE     ::puu_C
  ! COMPLEX(C_DOUBLE_COMPLEX), dimension(:,:,:,:),ALLOCATABLE      ::pcc_C
    REAL(KIND=rk)                                  :: sigma,al
@@ -85,7 +86,7 @@ MODULE variables_and_IO_mod
       CLOSE(1)
    !multiply domain dimensions by pi
        xl=xl*pi; yl=yl*pi; zl=zl*pi
-       al=0_ik
+       al=1_ik
    !assigns n.er of real points in case the dealiasing is on (al=1)
       IF (rk_steps /= 3 .AND. rk_steps /= 4) rk_steps=3
        nxp=nx+al*nx/2 ; nyp=ny+al*ny/2 ; nzp=nz+al*nz/2
@@ -126,6 +127,8 @@ SUBROUTINE memory_initialization
  ALLOCATE(kx(1:nx/2))
  ALLOCATE(ky(1:ny))
  ALLOCATE(kz(1:nz))
+ ALLOCATE(day(1:ny))
+ ALLOCATE(daz(1:nz))
  !allocation of forcing variables
  ALLOCATE(fu(1:nyp,1:nzp))
  ALLOCATE(fv(1:nyp,1:nzp))
@@ -175,9 +178,28 @@ SUBROUTINE wave_numbers
  ENDDO
 
 END SUBROUTINE wave_numbers
+!!!. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+!!!. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+SUBROUTINE dealiased_indeces
+ implicit none
+ INTEGER(KIND=ik)                               ::ii
+ DO ii=1,ny/2
+   day(ii)=ii
+  !  print *,ii,day(ii)
+ ENDDO
+ DO ii=1,nz/2
+   daz(ii)=ii
+ ENDDO
+ DO ii=ny/2+1,ny
+   day(ii)=ii+al*ny/2
+    ! print *,ii,day(ii)
+ ENDDO
+ ! stop
+ DO ii=nz/2+1,nz
+   daz(ii)=ii+al*nz/2
+ ENDDO
+END SUBROUTINE dealiased_indeces
 !!!. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-
-
 END MODULE variables_and_IO_mod
 !!!.....................................................................
 !!!.....................................................................

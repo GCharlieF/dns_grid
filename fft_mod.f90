@@ -11,7 +11,7 @@ MODULE fft_mod
 
  !!  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
  !!FFTW variables
-   INTEGER,SAVE                                           ::plan_type=FFTW_ESTIMATE
+   INTEGER,SAVE                                           ::plan_type=FFTW_PATIENT
    TYPE(C_PTR),SAVE                                       ::plan_ub,plan_uf
   !  TYPE(C_PTR),SAVE                                       ::plan_cb,plan_cf
    REAL(C_DOUBLE),pointer,DIMENSION(:,:,:,:)              ::uu
