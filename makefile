@@ -4,7 +4,7 @@ FC = ifort
  OP_COMP =  -u -O3 -convert big_endian -lfftw3 #-lfftw3_threads -traceback
 #Loading order of modules matters!1
 
-DEP = parameters_mod.o variables_and_IO_mod.o fft_mod.o grid_forcing_mod.o IO_mod.o time_advancement_mod.o dns_grid.o
+DEP = parameters_mod.o variables_mod.o fft_mod.o grid_forcing_mod.o stats_and_probes_mod.o IO_mod.o time_advancement_mod.o dns_grid.o
 dns_grid: $(DEP)
 	$(FC) $(OP_COMP) -o dns_grid $(DEP)
 

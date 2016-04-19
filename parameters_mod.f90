@@ -2,7 +2,8 @@
 !!!.....................................................................
 !!!........................PARAMETERS MOD...............................
 !!!.....................................................................
-
+!! Sets kinds for real and integer and other parameters used acorss the
+!! prsogram
 MODULE parameters_mod
  USE, INTRINSIC :: iso_c_binding
  INTEGER(KIND=4),PARAMETER                     ::rk=8,ik=4

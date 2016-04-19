@@ -4,7 +4,7 @@
 
 MODULE fft_mod
  USE parameters_mod
- USE variables_and_IO_mod
+ USE variables_mod
 
  implicit none
  INCLUDE 'fftw3.f03'
@@ -48,7 +48,7 @@ MODULE fft_mod
    pointer_uu = fftw_alloc_complex(int((nxp/2+1)*nyp*nzp*3,C_SIZE_T))
    pointer_hh = fftw_alloc_complex(int((nxp/2+1)*nyp*nzp*3,C_SIZE_T))
 
-!!~   Generates C ers uuC and uu pointing at the same memory space
+!!~   Generates C pointers uuC and uu pointing at the same memory space
    CALL c_f_pointer(pointer_uu,uu_C,[nxp/2+1,nyp,nzp,3])
    CALL c_f_pointer(pointer_uu,uu,[nxp+2,nyp,nzp,3])
 
@@ -137,7 +137,6 @@ SUBROUTINE B_FFT(vf_C,vf)
 !!!.   .    .   .    .   .    .   .    .   .    .   .    .   .    .   .
       !!De-aliasing
       IF (al==1) vf_C(nx/2+1:nxp/2,ny/2+1:ny/2+ny/2,nz/2+1:nz/2+nz/2,:)=CMPLX(0._RK,0._RK)
-      ! IF (al==1) vf_C(nx/2+1:nxp,ny+1:nyp,nz+1:nzp,:)=CMPLX(0._RK,0._RK)
 
       CALL fftw_execute_dft_c2r(plan_ub,vf_C,vf)
 

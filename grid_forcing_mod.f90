@@ -5,16 +5,16 @@
 MODULE grid_forcing_mod
 
 USE parameters_mod
-USE variables_and_IO_mod
+USE variables_mod
 implicit none
 
 CONTAINS
 
 !!!. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 SUBROUTINE grid_forcing_init
- !initialize at the first iteration the grid body force and updates it
- !evenyp time step.
- !Bicubic interpolation in space and linear in time
+ !! Initializes at the first iteration the grid body force and updates it
+ !! every time step.
+ !! Bicubic interpolation in space and linear in time
 
  implicit none
  REAL(KIND=rk),DIMENSION(3)              :: ao,an,as,ak
@@ -305,7 +305,7 @@ YN300: DO yn=1,nyp,nyp/nc
         ENDDO YN300
         ENDDO ZN300
 
-      
+
  !       address = 'Variables = "y","z","f1","f2","f3","f1n","f2n","f3n"'
  !       write(777,*) address
  !       address = 'ZONE I=1234 J=1234'
@@ -328,9 +328,9 @@ SUBROUTINE grid_forcing_update
 
 implicit none
 
- !initialize at the first iteration the grid body force and updates it
- !evenyp time step.
- !Bicubic interpolation in space and linear in time
+ !! Initialize at the first iteration the grid body force and updates it
+ !! every time step.
+ !! Bicubic interpolation in space and linear in time
 
  REAL(KIND=rk),DIMENSION(3)              :: ao,an,as,ak
  REAL(KIND=rk)                           :: u_rand,v_rand,w_rand
@@ -484,20 +484,20 @@ implicit none
   fv=t_weight(1)*fv_prev+t_weight(2)*fv_next
   fw=t_weight(1)*fw_prev+t_weight(2)*fw_next
 
- if (it==31) then
-       address = 'Variables = "y","z","f1","f2","f3"'
-       write(777,*) address
-       address = 'ZONE I=1234 J=1234'
-       write(address(08:11),1001) nyp
-       write(address(15:18),1001) nzp
- 1001  format(i4.4)
-       write(777,*) address
-       do 4000 z=1,nzp
-       do 4000 y=1,nyp
-       write(777,*)float(y),float(z),fu(y,z),fv(y,z),fw(y,z)
- 4000  continue
-       stop
- endif
+ ! if (it==31) then
+ !       address = 'Variables = "y","z","f1","f2","f3"'
+ !       write(777,*) address
+ !       address = 'ZONE I=1234 J=1234'
+ !       write(address(08:11),1001) nyp
+ !       write(address(15:18),1001) nzp
+ ! 1001  format(i4.4)
+ !       write(777,*) address
+ !       do 4000 z=1,nzp
+ !       do 4000 y=1,nyp
+ !       write(777,*)float(y),float(z),fu(y,z),fv(y,z),fw(y,z)
+ ! 4000  continue
+ !       stop
+ ! endif
 
 
 END SUBROUTINE grid_forcing_update

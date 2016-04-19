@@ -3,7 +3,7 @@
 !!!.....................................................................
 MODULE IO_mod
  USE parameters_mod
- USE variables_and_IO_mod
+ USE variables_mod
  USE fft_mod
  implicit none
  INTEGER(KIND=ik),DIMENSION(:),ALLOCATABLE    	  ::ind_x,ind_y,ind_z
@@ -14,7 +14,7 @@ contains
 !!!. . . . . . . . . . RE-INDEXING . . . . . . . . . . . . . . . . . . .
 
 SUBROUTINE re_indexing
-
+!!TODO ELIMINARE RE-INDEXING
  INTEGER(KIND=ik)                       :: ii,jj,kk,xx,yy,zz
 !!!.   .    .   .    .   .    .   .    .   .    .   .    .   .    .
 
@@ -76,7 +76,7 @@ END SUBROUTINE re_indexing
 !!!. . . . . . . . . . . READ FIELD  . . . . . . . . . . . . . . . . . .
 
 SUBROUTINE read_field
-!!!reads the input file
+!! Reads the velocity in the Fourier space  from input file
 
 
 implicit none
@@ -97,28 +97,17 @@ implicit none
 
    READ(2) tt
  L00 : DO xx=1,nx/2
-            !  if(xx.eq.1) then
-            !   xr=1
-            !  xi=2
-            !  else
-            !  xr=2*xx-1
-            !  xi=2*xx
-            !  endif
    L10 : DO yy=ny/2+1+al*ny/2,ny+al*ny/2
       L20 : DO zz=nz/2+1+al*nz/2,nz+al*nz/2
             READ(2)(vr(ii),vi(ii),ii=1,3)
             DO ii=1,3
-            ! uu(xr,yy,zz,ii)=vr(ii)
-            ! uu(xi,yy,zz,ii)=vi(ii)
             uu_C(xx,yy,zz,ii)=cmplx(vr(ii),vi(ii))
             ENDDO
       ENDDO L20
 
       L30 : DO zz=1,nz/2
             READ(2)(vr(ii),vi(ii),ii=1,3)
-             DO ii=1,3
-            ! uu(xr,yy,zz,ii)=vr(ii)
-            ! uu(xi,yy,zz,ii)=vi(ii)
+            DO ii=1,3
             uu_C(xx,yy,zz,ii)=cmplx(vr(ii),vi(ii))
             ENDDO
       ENDDO L30
@@ -127,48 +116,28 @@ implicit none
    L11 : DO yy=1,ny/2
       L21 : DO zz=nz/2+1+al*nz/2,nz+al*nz/2
             READ(2)(vr(ii),vi(ii),ii=1,3)
-             DO ii=1,3
-            ! uu(xr,yy,zz,ii)=vr(ii)
-            ! uu(xi,yy,zz,ii)=vi(ii)
+            DO ii=1,3
             uu_C(xx,yy,zz,ii)=cmplx(vr(ii),vi(ii))
             ENDDO
       ENDDO L21
 
       L31 : DO zz=1,nz/2
             READ(2)(vr(ii),vi(ii),ii=1,3)
-             DO ii=1,3
-            ! uu(xr,yy,zz,ii)=vr(ii)
-            ! uu(xi,yy,zz,ii)=vi(ii)
-             uu_C(xx,yy,zz,ii)=cmplx(vr(ii),vi(ii))
+            DO ii=1,3
+            uu_C(xx,yy,zz,ii)=cmplx(vr(ii),vi(ii))
             ENDDO
       ENDDO L31
    ENDDO L11
  ENDDO L00
    CLOSE(2)
 
-   !  DO zz=1,nz
-   !  DO yy=1,ny
-   !  DO xx=1,nx/2+1
-   !  DO ii=1,3
-   !   if(xx.eq.1) then
-   !   xr=1
-   !   xi=2
-   !   ELSE
-   !   xr=2*xx-1
-   !   xi=2*xx
-   !   ENDIF
-   !  uu_C(xx,yy,zz,ii)=cmplx(uu(xr,yy,zz,ii),uu(xi,yy,zz,ii))
-   !  ENDDO
-   !  ENDDO
-   !  ENDDO
-   !  ENDDO
 END SUBROUTINE read_field
 
 
 !!!. . . . . . . . . . WRITE FIELD . . . . . . . . . . . . . . . . . . .
 
-SUBROUTINE write_field(it)
-!!!reads the input file
+SUBROUTINE write_velocity_field(it)
+!! Writes in the output file the velocity field in the Fourier space
 implicit none
  INTEGER(KIND=ik)                  :: ii,jj,kk,hh,xx,yy,zz
  INTEGER(KIND=ik)                  :: it
@@ -217,7 +186,7 @@ implicit none
 
    CLOSE(3)
 
-END SUBROUTINE write_field
+END SUBROUTINE write_velocity_field
 !!!.....................................................................
 
 END MODULE IO_mod
