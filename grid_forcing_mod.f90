@@ -27,8 +27,8 @@ SUBROUTINE grid_forcing_init
  dy=REAL(nc,KIND=rk)/REAL(nyp,KIND=rk)
  dz=REAL(nc,KIND=rk)/REAL(nzp,KIND=rk)
 
-
-            call random_seed(put=[12,12])
+!!TODO fix seeding
+            call random_seed(put=[seed(1),seed(1)])
 
  !forcing startup (sets first couple f_prev/f_next)
  IF (it==0) THEN

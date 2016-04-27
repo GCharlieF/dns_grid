@@ -7,6 +7,7 @@ USE variables_mod      !program's main variables. Contains input_grid
 USE fft_mod
 USE grid_forcing_mod
 USE stats_and_probes_mod
+USE hit_forcings_mod
 USE IO_mod
 USE time_advancement_mod
 implicit none
@@ -24,8 +25,9 @@ CALL read_field            !!IO_m
 ! CALL re_indexing
 CALL rk_initialize         !!time_m
 CALL dealiased_indeces     !!var_m
-CALL grid_forcing_init     !!grid_m
-
+! CALL grid_forcing_init     !!grid_m
+CALL linear_forcing_init
+CALL divfree(uu_C)
 t=REAL(itmin,KIND=rk)*dt
 it=0
 

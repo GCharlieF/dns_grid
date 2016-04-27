@@ -7,6 +7,7 @@ USE variables_mod
 USE fft_mod
 USE grid_forcing_mod
 USE stats_and_probes_mod
+USE hit_forcings_mod
 
 implicit none
 
@@ -131,15 +132,8 @@ SUBROUTINE nonlinear
     CALL B_FFT(hh_C,hh)
     CALL B_FFT(uu_C,uu)
 
-    CALL average_energy(n_k)
+    CALL average_energy(stats_time)
 
-    print *,uu(12,12,12,1)
-    print *,hh(12,12,12,1)
-    ! do xx=2,nxp
-    !       write(19,*)xx,uu(xx,12,12,1)
-    !       ! write(19,*)xx,puu_C(xx,12,12,1)
-    !     enddo
-    !     stop
 !! Compute non-linear term in the phisical space
 !! If within the forced region adds the forcing term multiplied by
 !! a gaussian distribution function of xx
@@ -162,97 +156,99 @@ SUBROUTINE nonlinear
         !  hh(xx,yy,zz,:)=cross((/ uu(xx,yy,zz,1), uu(xx,yy,zz,2), uu(xx,yy,zz,3) /),&
         !  (/ hh(xx,yy,zz,1), hh(xx,yy,zz,2), hh(xx,yy,zz,3) /))
 
-
-         IF (REAL(xx,KIND=rk) > xf_min-nxp/8 .AND. REAL(xx,KIND=rk) < xf_max +nxp/8) THEN
-
-      !    amp_x=coeff*EXP(- (REAL(xx-nxp/2,KIND=rk)*xl/REAL(nxp,KIND=rk) )**2/sigma)
-         amp_x=0.5*(1 + TANH(aa*(delta_xf-abs(REAL(nxp/2-xx,KIND=rk))*xl/REAL(nxp,KIND=rk) )))
-
-         hh(xx,yy,zz,1)=hh(xx,yy,zz,1) + fu(yy,zz)*amp_x
-         hh(xx,yy,zz,2)=hh(xx,yy,zz,2) + fv(yy,zz)*amp_x
-         hh(xx,yy,zz,3)=hh(xx,yy,zz,3) + fw(yy,zz)*amp_x
-         ff1=ff1+(fu(yy,zz)*amp_x)**2/REAL(nxp*nyp*nzp,KIND=rk)
-         ff2=ff2+(fv(yy,zz)*amp_x)**2/REAL(nxp*nyp*nzp,KIND=rk)
-         ff3=ff3+(fw(yy,zz)*amp_x)**2/REAL(nxp*nyp*nzp,KIND=rk)
-         ENDIF
+        !! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        !! Forcing input in the physical space for the grid forcing
+      !    IF (REAL(xx,KIND=rk) > xf_min-nxp/8 .AND. REAL(xx,KIND=rk) < xf_max +nxp/8) THEN
+      !
+      ! !    amp_x=coeff*EXP(- (REAL(xx-nxp/2,KIND=rk)*xl/REAL(nxp,KIND=rk) )**2/sigma)
+      !    amp_x=0.5*(1 + TANH(aa*(delta_xf-abs(REAL(nxp/2-xx,KIND=rk))*xl/REAL(nxp,KIND=rk) )))
+      !
+      !    hh(xx,yy,zz,1)=hh(xx,yy,zz,1) + fu(yy,zz)*amp_x
+      !    hh(xx,yy,zz,2)=hh(xx,yy,zz,2) + fv(yy,zz)*amp_x
+      !    hh(xx,yy,zz,3)=hh(xx,yy,zz,3) + fw(yy,zz)*amp_x
+      !    ff1=ff1+(fu(yy,zz)*amp_x)**2/REAL(nxp*nyp*nzp,KIND=rk)
+      !    ff2=ff2+(fv(yy,zz)*amp_x)**2/REAL(nxp*nyp*nzp,KIND=rk)
+      !    ff3=ff3+(fw(yy,zz)*amp_x)**2/REAL(nxp*nyp*nzp,KIND=rk)
+      !    ENDIF
+      !    !! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
   ENDDO XL20
   ENDDO YL20
   ENDDO ZL20
-         print *,'ff',ff1,ff2,ff3,hh(nxp/2,nyp/2,nzp/2,1)
-      !  do xx=1,nxp
-      !    IF (REAL(xx,KIND=rk) > xf_min-nxp/8 .AND. REAL(xx,KIND=rk) < xf_max +nxp/8) THEN
-      !  write(19,*)xx,fu(24,24)*0.5_rk*(1 + TANH(aa*(delta_xf-abs(REAL(nxp/2-xx,KIND=rk))*xl/REAL(nxp,KIND=rk) ))),fu(xx,xx)
-      !   endif
-      !  enddo
-      !  stop
+        !  print *,'ff',ff1,ff2,ff3,hh(nxp/2,nyp/2,nzp/2,1)
+
 
    CALL compute_CFL
 
+   CALL linear_forcing
 
    CALL F_FFT(hh,hh_C)
    CALL F_FFT(uu,uu_C)
 
-  !  hh_C(2,2:3,2:3,1)=hh_C(2,2:3,2:3,1)+CMPLX(1_rk,1_rk)
-  !  hh_C(2,2:3,2:3,2)=hh_C(2,2:3,2:3,2)+CMPLX(1_rk,1_rk)
-  !  hh_C(2,2:3,2:3,3)=hh_C(2,2:3,2:3,3)+CMPLX(1_rk,1_rk)
+   ! hh_C(4,4,4,1)=hh_C(4,4,4,1)+CMPLX(1_rk,1_rk)
+   ! hh_C(4,4,4,2)=hh_C(4,4,4,2)+CMPLX(1_rk,1_rk)
+   ! hh_C(4,4,4,3)=hh_C(4,4,4,3)+CMPLX(1_rk,1_rk)
 
- ZL30 : DO zz=1,nz
- YL30 :    DO yy=1,ny
-            xx=1
-            jj=day(yy)
-            kk=daz(zz)
-              IF(jj==1 .AND. kk==1) THEN
-                hh_C(xx,jj,kk,1)=CMPLX(0._rk,0._rk)
-                hh_C(xx,jj,kk,2)=CMPLX(0._rk,0._rk)
-                hh_C(xx,jj,kk,3)=CMPLX(0._rk,0._rk)
-              ELSE
-                ac1=hh_C(xx,jj,kk,1)
-                ac2=hh_C(xx,jj,kk,2)
-                ac3=hh_C(xx,jj,kk,3)
+ ! ZL30 : DO zz=1,nz
+ ! YL30 :    DO yy=1,ny
+ !            xx=1
+ !            jj=day(yy)
+ !            kk=daz(zz)
+ !              IF(jj==1 .AND. kk==1) THEN
+ !                hh_C(xx,jj,kk,1)=CMPLX(0._rk,0._rk)
+ !                hh_C(xx,jj,kk,2)=CMPLX(0._rk,0._rk)
+ !                hh_C(xx,jj,kk,3)=CMPLX(0._rk,0._rk)
+ !              ELSE
+ !                ac1=hh_C(xx,jj,kk,1)
+ !                ac2=hh_C(xx,jj,kk,2)
+ !                ac3=hh_C(xx,jj,kk,3)
+ !
+ !                k_quad=kx(xx)**2+ky(yy)**2+kz(zz)**2
+ !                k_quad=1._rk/k_quad
+ !            !     k_quad=1./max(1.0E-10,abs(k_quad))
+ !
+ !                div=kx(xx)*hh_C(xx,jj,kk,1)&
+ !                   +ky(yy)*hh_C(xx,jj,kk,2)&
+ !                   +kz(zz)*hh_C(xx,jj,kk,3)
+ !
+ !
+ !                hh_C(xx,jj,kk,1)=ac1-div*kx(xx)*k_quad
+ !                hh_C(xx,jj,kk,2)=ac2-div*ky(yy)*k_quad
+ !                hh_C(xx,jj,kk,3)=ac3-div*kz(zz)*k_quad
+ !              ENDIF
+ !
+ ! XL31 :       DO xx=2,nx/2
+ ! ! XL31 :       DO xx=1,nx/2
+ !
+ !              ac1=hh_C(xx,jj,kk,1)
+ !              ac2=hh_C(xx,jj,kk,2)
+ !              ac3=hh_C(xx,jj,kk,3)
+ !
+ !               k_quad=kx(xx)**2+ky(yy)**2+kz(zz)**2
+ !               k_quad=1._rk/k_quad
+ !            !    k_quad=1./max(1.0E-10,abs(k_quad))
+ !
+ !               div=kx(xx)*hh_C(xx,jj,kk,1)&
+ !                  +ky(yy)*hh_C(xx,jj,kk,2)&
+ !                  +kz(zz)*hh_C(xx,jj,kk,3)
+ !
+ !                  hh_C(xx,jj,kk,1)=ac1-div*kx(xx)*k_quad
+ !                  hh_C(xx,jj,kk,2)=ac2-div*ky(yy)*k_quad
+ !                  hh_C(xx,jj,kk,3)=ac3-div*kz(zz)*k_quad
+ !
+ !
+ ! ENDDO XL31
+ ! ENDDO YL30
+ ! ENDDO ZL30
 
-                k_quad=kx(xx)**2+ky(yy)**2+kz(zz)**2
-                k_quad=1./k_quad
-
-                div=kx(xx)*hh_C(xx,jj,kk,1)&
-                   +ky(yy)*hh_C(xx,jj,kk,2)&
-                   +kz(zz)*hh_C(xx,jj,kk,3)
-
-
-                hh_C(xx,jj,kk,1)=ac1-div*kx(xx)*k_quad
-                hh_C(xx,jj,kk,2)=ac2-div*ky(yy)*k_quad
-                hh_C(xx,jj,kk,3)=ac3-div*kz(zz)*k_quad
-              ENDIF
-
- XL31 :       DO xx=2,nx/2
-
-              ac1=hh_C(xx,jj,kk,1)
-              ac2=hh_C(xx,jj,kk,2)
-              ac3=hh_C(xx,jj,kk,3)
-
-               k_quad=kx(xx)**2+ky(yy)**2+kz(zz)**2
-               k_quad=1./k_quad
-
-               div=kx(xx)*hh_C(xx,jj,kk,1)&
-                  +ky(yy)*hh_C(xx,jj,kk,2)&
-                  +kz(zz)*hh_C(xx,jj,kk,3)
-
-                  hh_C(xx,jj,kk,1)=ac1-div*kx(xx)*k_quad
-                  hh_C(xx,jj,kk,2)=ac2-div*ky(yy)*k_quad
-                  hh_C(xx,jj,kk,3)=ac3-div*kz(zz)*k_quad
-
-
- ENDDO XL31
- ENDDO YL30
- ENDDO ZL30
-
-
+      CALL divfree(hh_C)
+      CALL divfree(uu_C)
 
 
 END SUBROUTINE nonlinear
 
 !! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-!! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+!! . . . . . . . . . . . . . . . . LINEAR . . . . . . . . . . . . . . . . . . .
 SUBROUTINE linear
  implicit none
  INTEGER(KIND=ik)               :: zz,yy,xx,jj,kk
@@ -279,6 +275,72 @@ SUBROUTINE linear
 
 END SUBROUTINE linear
 !! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+!! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+SUBROUTINE divfree(vv_C)
+
+IMPLICIT NONE
+
+INTEGER(KIND=IK)                                   ::xx,yy,zz,jj,kk
+COMPLEX(KIND=rk)                                   :: k_quad
+COMPLEX(KIND=rk)                                   :: ac1,ac2,ac3,div
+COMPLEX(KIND=rk),DIMENSION(:,:,:,:), INTENT(INOUT) :: vv_C
+
+ZL30 : DO zz=1,nz
+YL30 :    DO yy=1,ny
+           xx=1
+           jj=day(yy)
+           kk=daz(zz)
+             IF(jj==1 .AND. kk==1) THEN
+               vv_C(xx,jj,kk,1)=CMPLX(0._rk,0._rk)
+               vv_C(xx,jj,kk,2)=CMPLX(0._rk,0._rk)
+               vv_C(xx,jj,kk,3)=CMPLX(0._rk,0._rk)
+             ELSE
+               ac1=vv_C(xx,jj,kk,1)
+               ac2=vv_C(xx,jj,kk,2)
+               ac3=vv_C(xx,jj,kk,3)
+
+               k_quad=kx(xx)**2+ky(yy)**2+kz(zz)**2
+               k_quad=1._rk/k_quad
+           !     k_quad=1./max(1.0E-10,abs(k_quad))
+
+               div=kx(xx)*vv_C(xx,jj,kk,1)&
+                  +ky(yy)*vv_C(xx,jj,kk,2)&
+                  +kz(zz)*vv_C(xx,jj,kk,3)
+
+
+               vv_C(xx,jj,kk,1)=ac1-div*kx(xx)*k_quad
+               vv_C(xx,jj,kk,2)=ac2-div*ky(yy)*k_quad
+               vv_C(xx,jj,kk,3)=ac3-div*kz(zz)*k_quad
+             ENDIF
+
+XL31 :       DO xx=2,nx/2
+! XL31 :       DO xx=1,nx/2
+
+             ac1=vv_C(xx,jj,kk,1)
+             ac2=vv_C(xx,jj,kk,2)
+             ac3=vv_C(xx,jj,kk,3)
+
+              k_quad=kx(xx)**2+ky(yy)**2+kz(zz)**2
+              k_quad=1._rk/k_quad
+           !    k_quad=1./max(1.0E-10,abs(k_quad))
+
+              div=kx(xx)*vv_C(xx,jj,kk,1)&
+                 +ky(yy)*vv_C(xx,jj,kk,2)&
+                 +kz(zz)*vv_C(xx,jj,kk,3)
+
+                 vv_C(xx,jj,kk,1)=ac1-div*kx(xx)*k_quad
+                 vv_C(xx,jj,kk,2)=ac2-div*ky(yy)*k_quad
+                 vv_C(xx,jj,kk,3)=ac3-div*kz(zz)*k_quad
+
+
+ENDDO XL31
+ENDDO YL30
+ENDDO ZL30
+END SUBROUTINE divfree
+
+
+!! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
 END MODULE time_advancement_mod
 
 !!!.....................................................................

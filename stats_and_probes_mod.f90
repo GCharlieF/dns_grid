@@ -43,11 +43,12 @@ END SUBROUTINE compute_CFL
 !!! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
 !!! . . . . . . . . . . . . . . ENERGY . . . . . . . . . . . . . . . . .
-SUBROUTINE average_energy(n_k)
+SUBROUTINE average_energy(compute_stats)
 
 IMPLICIT NONE
- INTEGER(KIND=ik)                        :: xx,yy,zz,ii,n_k
- IF (stats_time) THEN
+ INTEGER(KIND=ik)                        :: xx,yy,zz,ii
+ LOGICAL                                 :: compute_stats
+ IF (compute_stats) THEN
  ZL10 :DO zz=1,nzp
  YL10 :DO yy=1,nyp
  XL10 :DO xx=1,nxp
@@ -70,7 +71,7 @@ IMPLICIT NONE
  ENDIF
 
 !! Stats output
-IF (MOD(it-1,it_stat)==0 .AND. n_k==1) THEN
+IF (compute_stats) THEN
   WRITE(21,2)t,KE,KE_ii(1),KE_ii(2),KE_ii(3)
 ENDIF
 2 FORMAT(5(e15.6,1x))
@@ -79,40 +80,40 @@ END SUBROUTINE average_energy
 !!! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
 !!! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-SUBROUTINE average_dissipiation
-  IMPLICIT NONE
-   INTEGER(KIND=ik)                        :: xx,yy,zz,ii,n_k
-!!TODO dichiara dui_dxi in fft_mod
-!!TODO controlla che la trasformata funzioni cosi,
-!!TODO se necessario definisic nuovo tipo di trasformata
- ZL10: DO zz=1,nz
- YL10: DO zz=1,ny
- XL10: DO zz=1,nx
-   dui_dxi_C(xx,yy,zz,1)=uu_C(xx,yy,zz,1)*kx(xx)
-   dui_dxi_C(xx,yy,zz,2)=uu_C(xx,yy,zz,1)*ky(yy)
-   dui_dxi_C(xx,yy,zz,3)=uu_C(xx,yy,zz,1)*kz(zz)
-   dui_dxi_C(xx,yy,zz,4)=uu_C(xx,yy,zz,2)*kx(xx)
-   dui_dxi_C(xx,yy,zz,5)=uu_C(xx,yy,zz,2)*ky(yy)
-   dui_dxi_C(xx,yy,zz,6)=uu_C(xx,yy,zz,2)*kz(zz)
-   dui_dxi_C(xx,yy,zz,7)=uu_C(xx,yy,zz,3)*kx(xx)
-   dui_dxi_C(xx,yy,zz,8)=uu_C(xx,yy,zz,3)*ky(yy)
-   dui_dxi_C(xx,yy,zz,9)=uu_C(xx,yy,zz,3)*kz(zz)
- ENDDO XL10
- ENDDO YL10
- ENDDO ZL10
- CALL FFT_B(dui_dxi_C(:,:,:,1:3),dui_dxi(:,:,:,1:3))
- CALL FFT_B(dui_dxi_C(:,:,:,4:6),dui_dxi(:,:,:,4:6))
- CALL FFT_B(dui_dxi_C(:,:,:,7:9),dui_dxi(:,:,:,7:9))
-
- diss=0._rk
- ZL20: DO zz=1,nzp
- YL20: DO yy=1,nyp
- XL20: DO xx=1,nxp
-   diss=diss
- ENDDO XL20
- ENDDO YL20
- ENDDO ZL20
-END SUBROUTINE average_dissipiation
+! SUBROUTINE average_dissipiation
+!   IMPLICIT NONE
+!    INTEGER(KIND=ik)                        :: xx,yy,zz,ii,n_k
+! !!TODO dichiara dui_dxi in fft_mod
+! !!TODO controlla che la trasformata funzioni cosi,
+! !!TODO se necessario definisic nuovo tipo di trasformata
+!  ZL10: DO zz=1,nz
+!  YL10: DO yy=1,ny
+!  XL10: DO xx=1,nx
+!    dui_dxi_C(xx,yy,zz,1)=uu_C(xx,yy,zz,1)*kx(xx)
+!    dui_dxi_C(xx,yy,zz,2)=uu_C(xx,yy,zz,1)*ky(yy)
+!    dui_dxi_C(xx,yy,zz,3)=uu_C(xx,yy,zz,1)*kz(zz)
+!    dui_dxi_C(xx,yy,zz,4)=uu_C(xx,yy,zz,2)*kx(xx)
+!    dui_dxi_C(xx,yy,zz,5)=uu_C(xx,yy,zz,2)*ky(yy)
+!    dui_dxi_C(xx,yy,zz,6)=uu_C(xx,yy,zz,2)*kz(zz)
+!    dui_dxi_C(xx,yy,zz,7)=uu_C(xx,yy,zz,3)*kx(xx)
+!    dui_dxi_C(xx,yy,zz,8)=uu_C(xx,yy,zz,3)*ky(yy)
+!    dui_dxi_C(xx,yy,zz,9)=uu_C(xx,yy,zz,3)*kz(zz)
+!  ENDDO XL10
+!  ENDDO YL10
+!  ENDDO ZL10
+!  CALL FFT_B(dui_dxi_C(:,:,:,1:3),dui_dxi(:,:,:,1:3))
+!  CALL FFT_B(dui_dxi_C(:,:,:,4:6),dui_dxi(:,:,:,4:6))
+!  CALL FFT_B(dui_dxi_C(:,:,:,7:9),dui_dxi(:,:,:,7:9))
+!
+!  diss=0._rk
+!  ZL20: DO zz=1,nzp
+!  YL20: DO yy=1,nyp
+!  XL20: DO xx=1,nxp
+!    diss=diss
+!  ENDDO XL20
+!  ENDDO YL20
+!  ENDDO ZL20
+! END SUBROUTINE average_dissipiation
 
 !!! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 

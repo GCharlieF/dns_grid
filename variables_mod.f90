@@ -37,7 +37,7 @@ MODULE variables_mod
    INTEGER(KIND=ik)                               :: it_stat
    REAL(KIND=rk)                                  :: t,dt
   !!problem variables
-   INTEGER(KIND=ik),DIMENSION(12)                 :: iseed
+   INTEGER(KIND=ik),DIMENSION(12)                 :: seed
    INTEGER(KIND=ik)                               :: rk_steps
    INTEGER(KIND=ik)                               :: i_couple
    REAL(KIND=rk)                                  :: Re
@@ -78,7 +78,7 @@ MODULE variables_mod
        READ(1,*)  dt
        READ(1,*)  rk_steps
        READ(1,*)  f_amp
-       READ(1,*)  iseed(1)
+       READ(1,*)  seed(1)
        READ(1,*)  t_forz
        READ(1,*)  nc
        READ(1,*)  thick
@@ -110,7 +110,7 @@ MODULE variables_mod
          write(*,*) 'Re:',Re
          write(*,*) 'dt',dt
          write(*,*) 'f amp',f_amp
-         write(*,*) 'seeding',iseed(1)
+         write(*,*) 'seeding',seed(1)
          write(*,*) 'it mx/min', itmax,'/',itmin
          write(*,*) 'it out', it_wrt
          write(*,*) 'n_step', rk_steps
@@ -165,8 +165,8 @@ SUBROUTINE wave_numbers
  implicit none
  INTEGER(KIND=ik)                               ::ii,jj,kk
 
-
- DO ii=1,nx/2
+ kx(1)=CMPLX(0._rk,0._rk)
+ DO ii=2,nx/2
 	kx(ii)=CMPLX(0._rk,(2._rk*pi/xl)*REAL(ii-1,KIND=rk))
  ENDDO
 
