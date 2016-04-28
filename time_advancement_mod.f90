@@ -132,6 +132,7 @@ SUBROUTINE nonlinear
     CALL B_FFT(hh_C,hh)
     CALL B_FFT(uu_C,uu)
 
+
     CALL average_energy(stats_time)
 
 !! Compute non-linear term in the phisical space
@@ -176,7 +177,6 @@ SUBROUTINE nonlinear
   ENDDO YL20
   ENDDO ZL20
         !  print *,'ff',ff1,ff2,ff3,hh(nxp/2,nyp/2,nzp/2,1)
-
 
    CALL compute_CFL
 
@@ -242,7 +242,7 @@ SUBROUTINE nonlinear
  ! ENDDO ZL30
 
       CALL divfree(hh_C)
-      CALL divfree(uu_C)
+
 
 
 END SUBROUTINE nonlinear
@@ -290,11 +290,11 @@ YL30 :    DO yy=1,ny
            xx=1
            jj=day(yy)
            kk=daz(zz)
-             IF(jj==1 .AND. kk==1) THEN
-               vv_C(xx,jj,kk,1)=CMPLX(0._rk,0._rk)
-               vv_C(xx,jj,kk,2)=CMPLX(0._rk,0._rk)
-               vv_C(xx,jj,kk,3)=CMPLX(0._rk,0._rk)
-             ELSE
+            !  IF(jj==1 .AND. kk==1) THEN
+            !    vv_C(xx,jj,kk,1)=CMPLX(0._rk,0._rk)
+            !    vv_C(xx,jj,kk,2)=CMPLX(0._rk,0._rk)
+            !    vv_C(xx,jj,kk,3)=CMPLX(0._rk,0._rk)
+            !  ELSE
                ac1=vv_C(xx,jj,kk,1)
                ac2=vv_C(xx,jj,kk,2)
                ac3=vv_C(xx,jj,kk,3)
@@ -306,12 +306,14 @@ YL30 :    DO yy=1,ny
                div=kx(xx)*vv_C(xx,jj,kk,1)&
                   +ky(yy)*vv_C(xx,jj,kk,2)&
                   +kz(zz)*vv_C(xx,jj,kk,3)
-
+             IF(jj==1 .AND. kk==1) THEN
+                   k_quad=CMPLX(0._rk,0._rk)
+             ENDIF
 
                vv_C(xx,jj,kk,1)=ac1-div*kx(xx)*k_quad
                vv_C(xx,jj,kk,2)=ac2-div*ky(yy)*k_quad
                vv_C(xx,jj,kk,3)=ac3-div*kz(zz)*k_quad
-             ENDIF
+            !  ENDIF
 
 XL31 :       DO xx=2,nx/2
 ! XL31 :       DO xx=1,nx/2
