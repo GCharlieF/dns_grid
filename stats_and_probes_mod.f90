@@ -12,6 +12,7 @@ IMPLICIT NONE
  REAL(KIND=rk)                           :: KE
  REAL(KIND=rk),DIMENSION(3)              :: KE_ii
  REAL(KIND=rk)                           :: diss
+ REAL(KIND=rk)                           :: dt_new
  LOGICAL                                 :: stats_time
 
 CONTAINS
@@ -22,7 +23,9 @@ SUBROUTINE compute_CFL
  REAL(KIND=rk)                         :: u_max,v_max,w_max
  REAL(KIND=rk)                         :: dx,dy,dz
  REAL(KIND=rk)                         :: CFL
+ REAL(KIND=rk)                         :: CFL_max
 
+  CFL_max=0.15
   u_max=maxval(uu(:,:,:,1))
   v_max=maxval(uu(:,:,:,2))
   w_max=maxval(uu(:,:,:,3))
@@ -32,13 +35,14 @@ SUBROUTINE compute_CFL
   dz=zl/REAL(nzp,KIND=rk)
   CFL = u_max*(dt/dx)+v_max*(dt/dy)+w_max*(dt/dz)
   CFL = CFL*pi
+  dt_new=CFL_max/(u_max/dx+v_max/dy+w_max/dz)/pi
   PRINT *,'- - - - - - - -(compute cfl) - - - - - - - - - -'
   PRINT *,'CFL    ::',CFL
   PRINT *,'u max  ::',u_max
   PRINT *,'v max  ::',v_max
   PRINT *,'w max  ::',w_max
   PRINT *,'- - - - - - - - - - - - - - - - - - - - - - - - -'
-
+  IF (CFL > 3.0)  STOP
 END SUBROUTINE compute_CFL
 !!! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 

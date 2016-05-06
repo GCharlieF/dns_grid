@@ -30,9 +30,12 @@ XL10: DO xx=1,nxp
         CALL random_number(u_rand)
         CALL random_number(v_rand)
         CALL random_number(w_rand)
-        uu(xx,yy,zz,1)=u_rand*0.3
-        uu(xx,yy,zz,2)=v_rand*0.3
-        uu(xx,yy,zz,3)=w_rand*0.3
+        uu(xx,yy,zz,1)=0.25+u_rand*0.03
+        uu(xx,yy,zz,2)=0.25+v_rand*0.03
+        uu(xx,yy,zz,3)=0.25+w_rand*0.03
+        ! uu(xx,yy,zz,1)=u_rand*0.3
+        ! uu(xx,yy,zz,2)=v_rand*0.3
+        ! uu(xx,yy,zz,3)=w_rand*0.3
 ENDDO XL10
 ENDDO YL10
 ENDDO ZL10
@@ -52,9 +55,9 @@ INTEGER(KIND=ik)                  :: xx,yy,zz
 
 CALL average_energy(.TRUE.)
 KE0=f_amp
-A_linear=aa*KE0/(pi*KE)
-
-
+! A_linear=aa*KE0/(pi*KE)
+A_linear=0.0667
+print*,'A =',A_linear
 ZL10: DO zz=1,nzp
 YL10: DO yy=1,nyp
 XL10: DO xx=1,nxp

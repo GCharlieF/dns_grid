@@ -90,7 +90,7 @@ MODULE variables_mod
    !multiply domain dimensions by pi
        xl=xl*pi; yl=yl*pi; zl=zl*pi
        aa=aa*pi
-       al=1_ik
+
    !assigns n.er of real points in case the dealiasing is on (al=1)
       IF (rk_steps /= 3 .AND. rk_steps /= 4) rk_steps=3
        nxp=nx+al*nx/2 ; nyp=ny+al*ny/2 ; nzp=nz+al*nz/2
@@ -182,6 +182,10 @@ SUBROUTINE wave_numbers
 	kz(nz+2-kk) = CMPLX(0._rk,-(2._rk*pi/zl)*REAL(kk-1,KIND=rk))
  ENDDO
 
+ ! write(18,*),kx
+ ! write(19,*),ky
+ ! write(20,*),kz
+ ! stop
 END SUBROUTINE wave_numbers
 !!!. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 !!!. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
