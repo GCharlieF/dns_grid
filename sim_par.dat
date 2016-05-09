@@ -1,4 +1,4 @@
-'b'                 ::ver
+'a'                 ::ver
 'sp'                ::file_bin
 'gr'                ::force restart
 './'                ::path
@@ -8,17 +8,17 @@
 64                  ::nx
 64                  ::ny
 64                  ::nz
-120                 ::Re  200
+200                 ::Re 120 200
 0                   ::it min
-50000                 ::it max
+2000                 ::it max
 50000                 ::it out
-20                 ::it stat
-0.001               ::dt
+20                  ::it stat
+0.002               ::dt
 3                   ::RK order
-3.8               ::forcing amplitude
+0.0                 ::forcing amplitude (3.8 grid forcing) or KE0 (linear forcing)
 12                  ::seed
-0.1                 ::dt forc
+0.1                 ::dt forc (grid)
 8                   ::number of cells
 0.065               ::thickness
-1.5                 ::aa
-1                   ::De-aliasing (0 = Off, 1 = On)
+1.5                 ::aa (1.5 grid forcing=steepness, 0.7 linear forcing=time scale)
+0                   ::De-aliasing (0 = Off, 1 = On)

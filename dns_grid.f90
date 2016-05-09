@@ -7,6 +7,7 @@ USE variables_mod      !program's main variables. Contains input_grid
 USE fft_mod
 USE grid_forcing_mod
 USE stats_and_probes_mod
+USE hit_forcings_mod
 USE IO_mod
 USE time_advancement_mod
 implicit none
@@ -21,11 +22,13 @@ CALL memory_initialization !!var_m
 CALL fft_initialization    !!fft_m
 CALL wave_numbers          !!var_m
 CALL read_field            !!IO_m
-! CALL re_indexing
+ print *,'read field',uu_C(7,12,12,1)
+CALL re_indexing
 CALL rk_initialize         !!time_m
 CALL dealiased_indeces     !!var_m
 CALL grid_forcing_init     !!grid_m
-
+! CALL linear_forcing_init
+! CALL divfree(uu_C)
 t=REAL(itmin,KIND=rk)*dt
 it=0
 
@@ -35,7 +38,7 @@ RK_LOOP:  DO n_k=1,rk_steps
           PRINT *,'_________________________________________________________'
           PRINT *,'it , ik =',it,n_k
           PRINT *,'          '
-          PRINT *,'t >>>>>>>>>>',t
+          PRINT *,'dt, t >>>>>>>>>>',dt,t
           PRINT *,'          '
 
           t=t+dt/REAL(rk_steps,KIND=rk)
@@ -47,7 +50,7 @@ RK_LOOP:  DO n_k=1,rk_steps
           CALL partial_right_hand_side  !!time_m
 
           !! Updates forcing distirbtution every n_k steps
-          IF (n_k==1_ik) CALL grid_forcing_update !!grid_m
+          ! IF (n_k==1_ik) CALL grid_forcing_update !!grid_m
 
           CALL nonlinear                          !!time_m
 
@@ -57,7 +60,7 @@ RK_LOOP:  DO n_k=1,rk_steps
           IF (MOD(it-1,it_out)==0 .AND. n_k==1) CALL write_velocity_field(it)
 
 ENDDO RK_LOOP
-
+          ! dt=dt_new
 ENDDO TIMELOOP
 CALL CPU_TIME(t2)
 PRINT *,'Computation time:', t2- t1

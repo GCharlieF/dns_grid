@@ -37,7 +37,7 @@ MODULE variables_mod
    INTEGER(KIND=ik)                               :: it_stat
    REAL(KIND=rk)                                  :: t,dt
   !!problem variables
-   INTEGER(KIND=ik),DIMENSION(12)                 :: iseed
+   INTEGER(KIND=ik),DIMENSION(12)                 :: seed
    INTEGER(KIND=ik)                               :: rk_steps
    INTEGER(KIND=ik)                               :: i_couple
    REAL(KIND=rk)                                  :: Re
@@ -78,7 +78,7 @@ MODULE variables_mod
        READ(1,*)  dt
        READ(1,*)  rk_steps
        READ(1,*)  f_amp
-       READ(1,*)  iseed(1)
+       READ(1,*)  seed(1)
        READ(1,*)  t_forz
        READ(1,*)  nc
        READ(1,*)  thick
@@ -90,7 +90,7 @@ MODULE variables_mod
    !multiply domain dimensions by pi
        xl=xl*pi; yl=yl*pi; zl=zl*pi
        aa=aa*pi
-       al=1_ik
+
    !assigns n.er of real points in case the dealiasing is on (al=1)
       IF (rk_steps /= 3 .AND. rk_steps /= 4) rk_steps=3
        nxp=nx+al*nx/2 ; nyp=ny+al*ny/2 ; nzp=nz+al*nz/2
@@ -110,7 +110,7 @@ MODULE variables_mod
          write(*,*) 'Re:',Re
          write(*,*) 'dt',dt
          write(*,*) 'f amp',f_amp
-         write(*,*) 'seeding',iseed(1)
+         write(*,*) 'seeding',seed(1)
          write(*,*) 'it mx/min', itmax,'/',itmin
          write(*,*) 'it out', it_wrt
          write(*,*) 'n_step', rk_steps
@@ -165,8 +165,8 @@ SUBROUTINE wave_numbers
  implicit none
  INTEGER(KIND=ik)                               ::ii,jj,kk
 
-
- DO ii=1,nx/2
+ kx(1)=CMPLX(0._rk,0._rk)
+ DO ii=2,nx/2
 	kx(ii)=CMPLX(0._rk,(2._rk*pi/xl)*REAL(ii-1,KIND=rk))
  ENDDO
 
@@ -182,6 +182,10 @@ SUBROUTINE wave_numbers
 	kz(nz+2-kk) = CMPLX(0._rk,-(2._rk*pi/zl)*REAL(kk-1,KIND=rk))
  ENDDO
 
+ ! write(18,*),kx
+ ! write(19,*),ky
+ ! write(20,*),kz
+ ! stop
 END SUBROUTINE wave_numbers
 !!!. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 !!!. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
