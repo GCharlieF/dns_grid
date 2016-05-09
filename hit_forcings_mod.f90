@@ -7,13 +7,27 @@ MODULE hit_forcings_mod
 USE parameters_mod
 USE variables_mod
 USE stats_and_probes_mod
+
 IMPLICIT NONE
 
+!! Linear forcing - - - - - - - - - - - - - - - - - - - - -
 REAL(KIND=rk)               :: A_linear
 REAL(KIND=rk)               :: KE0
+!! Alvelious forcing - - - - - - - - - - - - - - - - - - - -
+INTEGER(KIND=ik)                                :: ka,kb
+REAL(KIND=rk)                                   :: kf,cc
+REAL(KIND=rk)                                   :: Power_in
+COMPLEX(KIND=rk)                                :: Aran,Bran
+REAL(KIND=rk)                                   :: gA,gB
+REAL(KIND=rk),DIMENSION(:,:,:),ALLOCATABLE      :: Fk
+COMPLEX(KIND=rk),DIMENSION(:,:,:,:),ALLOCATABLE :: e1,e2
+
+
 CONTAINS
-
-
+!!! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+!! Lundgren linear forcing with Carroll and Blanquart modification
+!! See "A proposed modification to Lundgren’s physical space
+!! velocity forcing method for isotropic turbulence" 2013
 !!!. . . . . . . . . . . LINEAR FORCING . . . . . . . . . . . . . . . . .
 SUBROUTINE linear_forcing_init
 IMPLICIT NONE
@@ -43,12 +57,9 @@ CALL average_energy(.TRUE.)
 CALL F_FFT(uu,uu_C)
 
 END SUBROUTINE linear_forcing_init
-!!! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+!!! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 !!!. . . . . . . . . . . LINEAR FORCING . . . . . . . . . . . . . . . . .
 SUBROUTINE linear_forcing
-!! Lundgren linear forcing with Carroll and Blanquart modification
-!! See "A proposed modification to Lundgren’s physical space
-!! velocity forcing method for isotropic turbulence" 2013
 
 IMPLICIT NONE
 INTEGER(KIND=ik)                  :: xx,yy,zz
@@ -68,5 +79,133 @@ ENDDO XL10
 ENDDO YL10
 ENDDO ZL10
 END SUBROUTINE linear_forcing
+!!! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+!!! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+!! Alvelious isotropic forcing see "Random forcing of three-dimensional
+!! homogenous isotropic turbulence" 1999 Physics of fluids
+
+!!! . . . . . . . . . . . ALVELIUS FORCING INIT . . . . . . . . . . . .
+SUBROUTINE alvelius_forcing_init
+!! initialize variables and sets the forcing distribution in the wave numbers
+!! TODO The exponential distribution doesn't make much sense as it is
+!! TODO never properly approximated on the discret wave numbers (to few points).
+!! TODO Change it with something simpler
+IMPLICIT NONE
+
+INTEGER(KIND=ik)                     :: xx,yy,zz
+REAL(KIND=rk)                        :: int_dist
+COMPLEX(KIND=rk)                     :: kk
+
+
+ka=2
+kb=6
+kf=3
+cc=0.05
+Power_in=1.
+
+
+ALLOCATE(Fk(ka:kb,ka:kb,ka:kb))
+
+ALLOCATE(e1(ka:kb,ka:kb,ka:kb,1:3))
+ALLOCATE(e2(ka:kb,ka:kb,ka:kb,1:3))
+
+
+
+
+int_dist=0._rk
+
+ZL10: DO zz=ka,kb
+YL10: DO yy=ka,kb
+XL10: DO xx=ka,kb
+        kk=SQRT(kx(xx)**2+ky(yy)**2+kz(zz)**2)
+        int_dist=int_dist+exp(-(ABS(kk)-kf)**2/cc)
+ENDDO XL10
+ENDDO YL10
+ENDDO ZL10
+
+
+! DO xx=ka,kb
+!         kk=SQRT( kx(xx)**2)
+!         write(18,*),xx,abs(kk),Power_in*exp( -(ABS(kk)-kf)**2/cc )/(dt*int_dist)
+! ENDDO
+! stop
+!! TODO kk complex? check signs!
+
+ZL20: DO zz=ka,kb
+YL20: DO yy=ka,kb
+XL20: DO xx=ka,kb
+        kk=SQRT( kx(xx)**2+ky(yy)**2+kz(zz)**2)
+        FK(xx,yy,zz)=Power_in*exp( -(ABS(kk)-kf)**2/cc )/(dt*int_dist)
+
+        e1(xx,yy,zz,1) =  kk**2/SQRT( kx(xx)**2+ky(yy)**2 )
+        e1(xx,yy,zz,2) = -kx(xx)**2/SQRT( kx(xx)**2+ky(yy)**2 )
+        e1(xx,yy,zz,3) =  0._rk
+
+        e2(xx,yy,zz,1) =  kx(xx)*ky(yy)/( kk*SQRT(kx(xx)**2+ky(yy)**2) )
+        e2(xx,yy,zz,2) =  ky(yy)*kz(zz)/( kk*SQRT(kx(xx)**2+ky(yy)**2) )
+        e2(xx,yy,zz,3) =  -SQRT( kx(xx)**2+ky(yy)**2 )/kk
+ENDDO XL20
+ENDDO YL20
+ENDDO ZL20
+
+
+END SUBROUTINE alvelius_forcing_init
+!!! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+!!! . . . . . . . . . . . ALVELIUS FORCING INIT . . . . . . . . . . . .
+SUBROUTINE alvelius_forcing
+
+IMPLICIT NONE
+
+INTEGER(KIND=ik)                            :: xx,yy,zz,ii
+REAL(KIND=rk)                               :: Psi,Phi
+REAL(KIND=rk)                               :: Theta1,Theta2
+REAL(KIND=rk)                               :: num,den
+COMPLEX(KIND=rk)                            :: zeta1,zeta2
+COMPLEX(KIND=rk)                            :: kk
+
+
+
+CALL random_seed(put=[seed(1),seed(1)])
+
+ZL10: DO zz=ka,kb
+YL10: DO yy=ka,kb
+XL10: DO xx=ka,kb
+
+        DO ii=1,3
+        zeta1=uu_C(xx,yy,zz,ii)*e1(xx,yy,zz,ii)
+        zeta2=uu_C(xx,yy,zz,ii)*e2(xx,yy,zz,ii)
+        CALL random_number(Psi)
+        CALL random_number(Phi)
+        Psi=Psi*2_rk*pi
+        Phi=Phi*2_rk*pi
+
+        gA=SIN(2._rk*Phi)
+        gB=COS(2._rk*Phi)
+
+        num =  gA*REAL(DREAL(zeta1),KIND=rk)  + gB*(SIN(Psi)*REAL(DIMAG(zeta2),KIND=rk)&
+               +COS(Psi)*REAL(DIMAG(zeta2),KIND=rk))
+        den = -gA*REAL(AIMAG(zeta1),KIND=rk)  + gB*(SIN(Psi)*REAL(DIMAG(zeta2),KIND=rk)&
+               -COS(Psi)*REAL(DIMAG(zeta2),KIND=rk))
+
+        Theta1 = ATAN(num/den)
+        IF (den == 0._rk) THEN
+        CALL random_number(Theta1)
+        Theta1=Theta1*2_rk*pi
+        ENDIF
+        Theta2 = Theta1 + Psi
+
+        kk= kx(xx)**2+ky(yy)**2+kz(zz)**2
+
+        Aran=gA*exp(CMPLX(0,Theta1))*(Fk(xx,yy,zz)/(2_rk*pi*kk))**0.5
+        Bran=gB*exp(CMPLX(0,Theta2))*(Fk(xx,yy,zz)/(2_rk*pi*kk))**0.5
+
+        hh_C(xx,yy,zz,ii) = hh_C(xx,yy,zz,ii) + Aran*e1(xx,yy,zz,ii) + Bran*e2(xx,yy,zz,ii)
+
+        ENDDO
+ENDDO XL10
+ENDDO YL10
+ENDDO ZL10
+END SUBROUTINE alvelius_forcing
 !!! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 END MODULE hit_forcings_mod

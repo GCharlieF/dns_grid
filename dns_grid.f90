@@ -26,7 +26,8 @@ CALL read_field            !!IO_m
 CALL re_indexing
 CALL rk_initialize         !!time_m
 CALL dealiased_indeces     !!var_m
-CALL grid_forcing_init     !!grid_m
+! CALL grid_forcing_init     !!grid_m
+CALL alvelius_forcing_init
 ! CALL linear_forcing_init
 ! CALL divfree(uu_C)
 t=REAL(itmin,KIND=rk)*dt

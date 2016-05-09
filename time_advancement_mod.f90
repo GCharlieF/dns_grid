@@ -190,6 +190,7 @@ SUBROUTINE nonlinear
    CALL F_FFT(hh,hh_C)
    CALL F_FFT(uu,uu_C)
 
+   CALL alvelius_forcing
    ! hh_C(4,4,4,1)=hh_C(4,4,4,1)+CMPLX(1_rk,1_rk)
    ! hh_C(4,4,4,2)=hh_C(4,4,4,2)+CMPLX(1_rk,1_rk)
    ! hh_C(4,4,4,3)=hh_C(4,4,4,3)+CMPLX(1_rk,1_rk)
