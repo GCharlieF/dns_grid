@@ -18,7 +18,7 @@ IMPLICIT NONE
 CONTAINS
 !!! . . . . . . . . . . . . COMPUTE CFL . . . . . . . . . . . . . . . . . . . . . .
 
-SUBROUTINE compute_CFL
+SUBROUTINE STATS_compute_CFL
  IMPLICIT NONE
  REAL(KIND=rk)                         :: u_max,v_max,w_max
  REAL(KIND=rk)                         :: dx,dy,dz
@@ -43,11 +43,11 @@ SUBROUTINE compute_CFL
   PRINT *,'w max  ::',w_max
   PRINT *,'- - - - - - - - - - - - - - - - - - - - - - - - -'
   IF (CFL > 3.0)  STOP
-END SUBROUTINE compute_CFL
+END SUBROUTINE STATS_compute_CFL
 !!! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
 !!! . . . . . . . . . . . . . . ENERGY . . . . . . . . . . . . . . . . .
-SUBROUTINE average_energy(compute_stats)
+SUBROUTINE STATS_average_energy(compute_stats)
 
 IMPLICIT NONE
  INTEGER(KIND=ik)                        :: xx,yy,zz,ii
@@ -80,7 +80,7 @@ IF (compute_stats) THEN
 ENDIF
 2 FORMAT(5(e15.6,1x))
 
-END SUBROUTINE average_energy
+END SUBROUTINE STATS_average_energy
 !!! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
 !!! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -123,5 +123,7 @@ END SUBROUTINE average_energy
 
 
 END MODULE stats_and_probes_mod
+
+!!TODO proper file for the stats
 !!!.....................................................................
 !!!.....................................................................

@@ -5,9 +5,10 @@
 MODULE fft_mod
  USE parameters_mod
  USE variables_mod
-
+ USE mpi_mod
  implicit none
- INCLUDE 'fftw3.f03'
+ ! INCLUDE 'fftw3.f03'
+ INCLUDE 'fftw3-mpi.f03'
 
  !!  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
  !!FFTW variables
@@ -39,10 +40,10 @@ MODULE fft_mod
 
   contains
 
- SUBROUTINE fft_initialization
+ SUBROUTINE FFT_initialization
 
 !! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
+    CALL fftw_mpi_init()
 
 !!~   Allocates C vector for the velocity field
    pointer_uu = fftw_alloc_complex(int((nxp/2+1)*nyp*nzp*3,C_SIZE_T))
@@ -125,7 +126,7 @@ MODULE fft_mod
 !
 !      plan_cf=fftw_plan_many_dft_r2c(rank,numb,howmany,cc,&
 !              onembed,ostride,odist,cc_C,inembed,istride,idist,plan_type)
- END SUBROUTINE fft_initialization
+ END SUBROUTINE FFT_initialization
 
  !!!. . . . . . . . . . BACKWARD FFT VELOCITY FIELD. . . . . . . . . . . .
 SUBROUTINE B_FFT(vf_C,vf)

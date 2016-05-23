@@ -13,7 +13,7 @@ contains
 
 !!!. . . . . . . . . . RE-INDEXING . . . . . . . . . . . . . . . . . . .
 
-SUBROUTINE re_indexing
+SUBROUTINE IO_re_indexing
 !!TODO ELIMINARE RE-INDEXING
  INTEGER(KIND=ik)                       :: ii,jj,kk,xx,yy,zz
 !!!.   .    .   .    .   .    .   .    .   .    .   .    .   .    .
@@ -27,17 +27,6 @@ SUBROUTINE re_indexing
  ALLOCATE(yc(1:nyp))
  ALLOCATE(zc(1:nzp))
 ! . . . . . . . . . . .
-!~      DO ii=1,nxp/2
-!~          ind_x(ii)=nxp/2+ii
-!~          xx=ind_x(ii)
-!~          xc(ii)=xl*REAL(xx-nxp-1,KIND=rk)/REAL(nxp,KIND=rk)
-!~
-!~ 	 ENDDO
-!~      DO ii=nxp/2+1,nxp
-!~          ind_x(ii)=ii-nxp/2
-!~          xx=ind_x(ii)
-!~          xc(ii)=xl*REAL(xx-1,KIND=rk)/REAL(nxp,KIND=rk)
-!~ 	 ENDDO
 	    DO ii=1,nxp/2
          ind_x(ii)=ii
          xx=ind_x(ii)-1
@@ -72,10 +61,10 @@ SUBROUTINE re_indexing
          zc(kk)=zl*REAL(zz-1,KIND=rk)/REAL(nzp,KIND=rk)
 	 ENDDO
  ! . . . . . . . . . . .
-END SUBROUTINE re_indexing
+END SUBROUTINE IO_re_indexing
 !!!. . . . . . . . . . . READ FIELD  . . . . . . . . . . . . . . . . . .
 
-SUBROUTINE read_field
+SUBROUTINE IO_read_field
 !! Reads the velocity in the Fourier space  from input file
 
 
@@ -131,12 +120,12 @@ implicit none
  ENDDO L00
    CLOSE(2)
 
-END SUBROUTINE read_field
+END SUBROUTINE IO_read_field
 
 
 !!!. . . . . . . . . . WRITE FIELD . . . . . . . . . . . . . . . . . . .
 
-SUBROUTINE write_velocity_field(it)
+SUBROUTINE IO_write_velocity_field(it)
 !! Writes in the output file the velocity field in the Fourier space
 implicit none
  INTEGER(KIND=ik)                  :: ii,jj,kk,hh,xx,yy,zz
@@ -148,7 +137,8 @@ implicit none
 
 !!!.   .    .   .    .   .    .   .    .   .    .   .    .   .    .   .
 
-    WRITE(iteration,'(I6.6)')it
+IF (it-1 /= itmin) THEN
+   WRITE(iteration,'(I6.6)')it-1
    address=trim(path)//trim(ver)//'_'//trim(file_bin)//'_'//trim(iteration)//'.dat'
    print*,'writing : ',address
    OPEN(unit=3,file=address,status='unknown',form='unformatted')
@@ -185,8 +175,9 @@ implicit none
     ENDDO
 
    CLOSE(3)
+ENDIF
 
-END SUBROUTINE write_velocity_field
+END SUBROUTINE IO_write_velocity_field
 !!!.....................................................................
 
 END MODULE IO_mod

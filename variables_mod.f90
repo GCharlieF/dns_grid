@@ -3,63 +3,62 @@
 !!!.....................................................................
 MODULE variables_mod
 
-  USE parameters_mod
- !~  USE, INTRINSIC :: iso_c_binding
-  implicit none
+USE parameters_mod
+IMPLICIT NONE
 
 !!Grid forcing variables
-  REAL(KIND=rk),DIMENSION(:,:),ALLOCATABLE       :: fu_prev,fv_prev,fw_prev      !forcings
-  REAL(KIND=rk),DIMENSION(:,:),ALLOCATABLE       :: fu_next,fv_next,fw_next
-  REAL(KIND=rk),DIMENSION(:,:),ALLOCATABLE       :: fu,fv,fw
-  REAL(KIND=rk)                                  :: f_amp
-  REAL(KIND=rk)                                  :: t_forz
-  REAL(KIND=rk)                                  :: thick
-  REAL(KIND=RK),DIMENSION(2)                     :: t_weight
+INTEGER(KIND=ik)                               :: nc
+INTEGER(KIND=ik)                               :: dt_forc
+CHARACTER(LEN=10)                              :: file_gr_rest
+REAL(KIND=rk),DIMENSION(:,:),ALLOCATABLE       :: fu_prev,fv_prev,fw_prev
+REAL(KIND=rk),DIMENSION(:,:),ALLOCATABLE       :: fu_next,fv_next,fw_next
+REAL(KIND=rk),DIMENSION(:,:),ALLOCATABLE       :: fu,fv,fw
+REAL(KIND=rk)                                  :: f_amp
+REAL(KIND=rk)                                  :: t_forz
+REAL(KIND=rk)                                  :: thick
+REAL(KIND=RK),DIMENSION(2)                     :: t_weight
 
-  INTEGER(KIND=ik)                               :: nc
-  INTEGER(KIND=ik)                               :: dt_forc
-  CHARACTER(LEN=10)                              :: file_gr_rest
 
 !!  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
-  !! Problem variables
-   INTEGER(KIND=ik)                               :: nx,ny,nz   !fourier modes
-   INTEGER(KIND=ik)                               :: nxp,nyp,nzp   !real points
-   REAL(KIND=rk)                                  :: xl,yl,zl   !domain's dimensions
-   COMPLEX(KIND=rk),DIMENSION(:),ALLOCATABLE      :: kx,ky,kz
-   INTEGER(KIND=ik),DIMENSION(:),ALLOCATABLE      :: day,daz
-   COMPLEX(C_DOUBLE_COMPLEX), dimension(:,:,:,:),ALLOCATABLE     ::puu_C
- ! COMPLEX(C_DOUBLE_COMPLEX), dimension(:,:,:,:),ALLOCATABLE      ::pcc_C
-   REAL(KIND=rk)                                  :: sigma,al
+!! Problem variables
+INTEGER(KIND=ik)                               :: nx,ny,nz
+INTEGER(KIND=ik)                               :: nxp,nyp,nzp
+REAL(KIND=rk)                                  :: xl,yl,zl
+COMPLEX(KIND=rk),DIMENSION(:),ALLOCATABLE      :: kx,ky,kz
+INTEGER(KIND=ik),DIMENSION(:),ALLOCATABLE      :: day,daz
+COMPLEX(C_DOUBLE_COMPLEX), dimension(:,:,:,:),ALLOCATABLE     ::puu_C
+! COMPLEX(C_DOUBLE_COMPLEX), dimension(:,:,:,:),ALLOCATABLE      ::pcc_C
+REAL(KIND=rk)                                  :: sigma,al
 
-  !!time variables
-   INTEGER(KIND=ik)                               :: it,itmin,itmax
-   INTEGER(KIND=ik)                               :: it_out,it_wrt
-   INTEGER(KIND=ik)                               :: it_stat
-   REAL(KIND=rk)                                  :: t,dt
-  !!problem variables
-   INTEGER(KIND=ik),DIMENSION(12)                 :: seed
-   INTEGER(KIND=ik)                               :: rk_steps
-   INTEGER(KIND=ik)                               :: i_couple
-   REAL(KIND=rk)                                  :: Re
-   REAL(KIND=rk)                                  :: aa
-   REAL(KIND=rk)                                  :: Pe
-   REAL(KIND=rk)                                  :: De
-   REAL(KIND=rk)                                  :: eta_p
+INTEGER(KIND=ik),DIMENSION(12)                 :: seed
+INTEGER(KIND=ik)                               :: rk_steps
+INTEGER(KIND=ik)                               :: i_couple
+REAL(KIND=rk)                                  :: Re
+REAL(KIND=rk)                                  :: eta_p
+REAL(KIND=rk)                                  :: aa
+REAL(KIND=rk)                                  :: Pe
+REAL(KIND=rk)                                  :: De
 
-   !!  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
-   !addresses and characters
+!!time variables
+INTEGER(KIND=ik)                               :: it,itmin,itmax
+INTEGER(KIND=ik)                               :: it_out,it_wrt
+INTEGER(KIND=ik)                               :: it_stat
+REAL(KIND=rk)                                  :: t,dt
 
-   CHARACTER(LEN=4)                              :: ver
-   CHARACTER(LEN=40)                             :: path
-   CHARACTER(LEN=10)                             :: file_bin
+!!  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+!!addresses and characters
 
-   !!  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+CHARACTER(LEN=4)                              :: ver
+CHARACTER(LEN=40)                             :: path
+CHARACTER(LEN=10)                             :: file_bin
+
+!!  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
 
  CONTAINS
-   !.......................................................................
-   SUBROUTINE read_input_parameters
-   !read case parameters and allocates all the variables
-      OPEN(unit=1,file='sim_par.dat',status='unknown')
+!.......................................................................
+SUBROUTINE VAR_read_input_parameters
+!!read case parameters and allocates all the variables
+OPEN(unit=1,file='sim_par.dat',status='unknown')
        READ(1,*)  ver
        READ(1,*)  file_bin
        READ(1,*)  file_gr_rest
@@ -86,47 +85,40 @@ MODULE variables_mod
        READ(1,*)  al
        !  READ(1,*)  i_couple
 
-      CLOSE(1)
-   !multiply domain dimensions by pi
-       xl=xl*pi; yl=yl*pi; zl=zl*pi
-       aa=aa*pi
+CLOSE(1)
+!!multiply domain dimensions by pi
+ xl=xl*pi; yl=yl*pi; zl=zl*pi
+ aa=aa*pi
+!! set rk_steps to 3 if not properly defined
+IF (rk_steps /= 3 .AND. rk_steps /= 4) rk_steps=3
 
-   !assigns n.er of real points in case the dealiasing is on (al=1)
-      IF (rk_steps /= 3 .AND. rk_steps /= 4) rk_steps=3
-       nxp=nx+al*nx/2 ; nyp=ny+al*ny/2 ; nzp=nz+al*nz/2
-      !  itmin=itmin*rk_steps
-      !  itmax=itmax*rk_steps
-      !  it_out=it_out*rk_steps
-      !  it_stat=it_stat*rk_steps
-      !  dt_forc=rk_steps*int(t_forz/dt,KIND=4)
+!!assigns n.er of real points in case the dealiasing is on (al=1)
+nxp=nx+al*nx/2 ; nyp=ny+al*ny/2 ; nzp=nz+al*nz/2
 
-       dt_forc=int(t_forz/dt,KIND=ik)
-       it_wrt=itmin+it_out
+dt_forc=int(t_forz/dt,KIND=ik)
+it_wrt=itmin+it_out
 
-         write(*,*) 'initial parameters'
-         write(*,*) 'xl,yl,zl: ',xl,yl,zl
-         write(*,*) 'Fourier modes: ',nx,ny,nz
-         write(*,*) 'De-aliased Fourier modes:',nxp,nyp,nzp
-         write(*,*) 'Re:',Re
-         write(*,*) 'dt',dt
-         write(*,*) 'f amp',f_amp
-         write(*,*) 'seeding',seed(1)
-         write(*,*) 'it mx/min', itmax,'/',itmin
-         write(*,*) 'it out', it_wrt
-         write(*,*) 'n_step', rk_steps
-         write(*,*) 'n_forz', dt_forc
-         write(*,*) 'n_celle', nc
-         write(*,*) 'thcik and aa', thick,aa
+ write(*,*) 'initial parameters'
+ write(*,*) 'xl,yl,zl: ',xl,yl,zl
+ write(*,*) 'Fourier modes: ',nx,ny,nz
+ write(*,*) 'De-aliased Fourier modes:',nxp,nyp,nzp
+ write(*,*) 'Re:',Re
+ write(*,*) 'dt',dt
+ write(*,*) 'f amp',f_amp
+ write(*,*) 'seeding',seed(1)
+ write(*,*) 'it mx/min', itmax,'/',itmin
+ write(*,*) 'it out', it_wrt
+ write(*,*) 'n_step', rk_steps
+ write(*,*) 'n_forz', dt_forc
+ write(*,*) 'n_celle', nc
+ write(*,*) 'thcik and aa', thick,aa
         !  write(*,*) 'i_couple',i_couple
 
-   !allocation of variables
-!! De-aliasing?
-
-END SUBROUTINE read_input_parameters
+END SUBROUTINE VAR_read_input_parameters
 
 !!!. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 !!!. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-SUBROUTINE memory_initialization
+SUBROUTINE VAR_memory_initialization
   ALLOCATE(puu_C(1:nx/2,1:ny,1:nz,1:3))
 !  ALLOCATE(pcc_C(1:nx/2,1:ny,1:nz,1:3))
  ALLOCATE(kx(1:nx/2))
@@ -144,24 +136,24 @@ SUBROUTINE memory_initialization
  ALLOCATE(fu_next(1:nyp,1:nzp))
  ALLOCATE(fv_next(1:nyp,1:nzp))
  ALLOCATE(fw_next(1:nyp,1:nzp))
-END SUBROUTINE memory_initialization
+END SUBROUTINE VAR_memory_initialization
 !!!. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
 
 !!!. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-SUBROUTINE free_memory
+SUBROUTINE VAR_free_memory
  DEALLOCATE(puu_C)
  ! DEALLOCATE(pcc_C)
  DEALLOCATE(kx)
  DEALLOCATE(ky)
  DEALLOCATE(kz)
 
-END SUBROUTINE free_memory
+END SUBROUTINE VAR_free_memory
 !!!. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
 !!!. . . . . . . . . . WAVE NUMBERS. . . . . . . . . . . . . . . . . . .
 
-SUBROUTINE wave_numbers
+SUBROUTINE VAR_wave_numbers
  implicit none
  INTEGER(KIND=ik)                               ::ii,jj,kk
 
@@ -182,32 +174,25 @@ SUBROUTINE wave_numbers
 	kz(nz+2-kk) = CMPLX(0._rk,-(2._rk*pi/zl)*REAL(kk-1,KIND=rk))
  ENDDO
 
- ! write(18,*),kx
- ! write(19,*),ky
- ! write(20,*),kz
- ! stop
-END SUBROUTINE wave_numbers
+END SUBROUTINE VAR_wave_numbers
 !!!. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 !!!. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-SUBROUTINE dealiased_indeces
+SUBROUTINE VAR_dealiased_indeces
  implicit none
  INTEGER(KIND=ik)                               ::ii
  DO ii=1,ny/2
    day(ii)=ii
-  !  print *,ii,day(ii)
  ENDDO
  DO ii=1,nz/2
    daz(ii)=ii
  ENDDO
  DO ii=ny/2+1,ny
    day(ii)=ii+al*ny/2
-    ! print *,ii,day(ii)
  ENDDO
- ! stop
  DO ii=nz/2+1,nz
    daz(ii)=ii+al*nz/2
  ENDDO
-END SUBROUTINE dealiased_indeces
+END SUBROUTINE VAR_dealiased_indeces
 !!!. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 END MODULE variables_mod
 !!!.....................................................................

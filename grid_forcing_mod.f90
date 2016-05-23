@@ -11,7 +11,7 @@ implicit none
 CONTAINS
 
 !!!. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-SUBROUTINE grid_forcing_init
+SUBROUTINE GRID_forcing_init
  !! Initializes at the first iteration the grid body force and updates it
  !! every time step.
  !! Bicubic interpolation in space and linear in time
@@ -320,11 +320,11 @@ YN300: DO yn=1,nyp,nyp/nc
  ! 4000  continue
  !       stop
 
-END SUBROUTINE grid_forcing_init
+END SUBROUTINE GRID_forcing_init
 !!!. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
 !!!. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-SUBROUTINE grid_forcing_update
+SUBROUTINE GRID_forcing_update
 
 implicit none
 
@@ -484,7 +484,7 @@ implicit none
   fv=t_weight(1)*fv_prev+t_weight(2)*fv_next
   fw=t_weight(1)*fw_prev+t_weight(2)*fw_next
 
- ! if (it==31) then
+ ! if (it==3) then
  !       address = 'Variables = "y","z","f1","f2","f3"'
  !       write(777,*) address
  !       address = 'ZONE I=1234 J=1234'
@@ -500,7 +500,7 @@ implicit none
  ! endif
 
 
-END SUBROUTINE grid_forcing_update
+END SUBROUTINE GRID_forcing_update
 !!!. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
 END MODULE grid_forcing_mod
