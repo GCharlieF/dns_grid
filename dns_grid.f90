@@ -69,3 +69,5 @@ CALL VAR_free_memory
 !=======================================================================
 END PROGRAM dns_grid
 !=======================================================================
+!!Idee per il programma:
+!!ifdef/ifndef, inquire, do concurrent, intent(in/out)
