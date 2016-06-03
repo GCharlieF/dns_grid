@@ -1,31 +1,32 @@
 !=======================================================================
 !=======================================================================
 PROGRAM dns_grid
-
 USE parameters_mod                                !! PAR
-USE mpi_mod                                       !! MPI
 USE variables_mod                                 !! VAR
+USE MPI_mod                                       !! MPI
 USE fft_mod                                       !! FFT
 USE grid_forcing_mod                              !! GRID
 USE stats_and_probes_mod                          !! STATS
-! USE hit_forcings_mod                              !! HIT
+USE hit_forcings_mod                              !! HIT
 USE IO_mod                                        !! IO
 USE time_advancement_mod                          !! TA
 IMPLICIT NONE
-!!=======================================================================
 REAL(KIND=4)          :: t1,t2
 REAL(kind=rk)         :: x
 INTEGER :: mm
+!!=======================================================================
 
 !! Reads case variables and allocates the arrays
 CALL VAR_read_input_parameters
+CALL MPI_initialize
 CALL VAR_memory_initialization
 CALL FFT_initialization
 CALL VAR_wave_numbers
-CALL IO_read_field
+! CALL IO_read_field
+! CALL IO_re_indexing
 CALL TA_rk_initialize
 CALL VAR_dealiased_indeces
-CALL GRID_forcing_init
+! CALL GRID_forcing_init
 ! CALL HIT_alvelius_forcing_init
 ! CALL HIT_linear_forcing_init
 ! CALL TA_divfree(uu_C)
@@ -51,7 +52,7 @@ RK_LOOP:  DO n_k=1,rk_steps
           CALL TA_partial_right_hand_side
 
           !! Updates forcing distirbtution every n_k steps
-          IF (n_k==1_ik) CALL GRID_forcing_update
+          ! IF (n_k==1_ik) CALL GRID_forcing_update !!grid_m
 
           CALL TA_nonlinear
 
@@ -65,9 +66,6 @@ ENDDO RK_LOOP
 ENDDO TIMELOOP
 CALL CPU_TIME(t2)
 PRINT *,'Computation time:', t2- t1
-CALL VAR_free_memory
 !=======================================================================
 END PROGRAM dns_grid
 !=======================================================================
-!!Idee per il programma:
-!!ifdef/ifndef, inquire, do concurrent, intent(in/out)

@@ -80,6 +80,16 @@ INTEGER(KIND=ik)                             :: zz,yy,xx,jj,kk
  ENDDO YL10
  ENDDO ZL10
 
+ print *,'prhs',puu_C(7,12,12,1)
+ print *,'prhs',uu_C(7,12,12,1)
+ xx=7
+ yy=12
+ zz=12
+ jj=day(yy)
+ kk=daz(zz)
+ k_quad=(kx(xx)**2+ky(yy)**2+kz(zz)**2)
+ print *,pnrk,k_quad,ark(n_k,rk_steps),brk(n_k,rk_steps)
+ print *,pnrk+k_quad,qnrk*hh_C(xx,jj,kk,1)
 END SUBROUTINE TA_partial_right_hand_side
 
 !! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -122,18 +132,12 @@ SUBROUTINE TA_nonlinear
           ENDDO YL10
        ENDDO ZL10
 
-      !  if(n_k==2) then
-      !        do xx=2,nx/2
-      !              write(18,*)xx,REAL(uu_C(xx,12,12,1)),IMAG(uu_C(xx,12,12,1))
-      !              write(18,*)xx,REAL(hh_C(xx,12,12,1)),IMAG(hh_C(xx,12,12,1))
-      !        ENDDO
-      !        stop
-      ! endif
-
     CALL B_FFT(hh_C,hh)
     CALL B_FFT(uu_C,uu)
-    print *,'u1nl',uu(12,12,12,1)
-    print *,'h1nl',hh(12,12,12,1)
+
+    print *,'u ta   ::',uu(12,12,12,1)
+    print *,'hh ta  ::',hh(12,12,12,1)
+
     CALL STATS_average_energy(stats_time)
 
 !! Compute non-linear term in the phisical space
@@ -177,15 +181,20 @@ SUBROUTINE TA_nonlinear
   ENDDO XL20
   ENDDO YL20
   ENDDO ZL20
-         print *,'ff',ff1,ff2,ff3
-         print *,'h1nl 2',hh(nxp/2,nyp/2,nzp/2,1)
+         print *,'ff',ff1,ff2,ff3,hh(nxp/2,nyp/2,nzp/2,1)
 
    CALL STATS_compute_CFL
 
+   ! CALL HIT_linear_forcing
 
    CALL F_FFT(hh,hh_C)
-   ! CALL F_FFT(uu,uu_C)
+   CALL F_FFT(uu,uu_C)
 
+
+
+   ! hh_C(4,4,4,1)=hh_C(4,4,4,1)+CMPLX(1_rk,1_rk)
+   ! hh_C(4,4,4,2)=hh_C(4,4,4,2)+CMPLX(1_rk,1_rk)
+   ! hh_C(4,4,4,3)=hh_C(4,4,4,3)+CMPLX(1_rk,1_rk)
 
  ZL30 : DO zz=1,nz
  YL30 :    DO yy=1,ny
@@ -203,6 +212,7 @@ SUBROUTINE TA_nonlinear
 
                 k_quad=kx(xx)**2+ky(yy)**2+kz(zz)**2
                 k_quad=1._rk/k_quad
+            !     k_quad=1./max(1.0E-10,abs(k_quad))
 
                 div=kx(xx)*hh_C(xx,jj,kk,1)&
                    +ky(yy)*hh_C(xx,jj,kk,2)&
@@ -215,6 +225,7 @@ SUBROUTINE TA_nonlinear
               ENDIF
 
  XL31 :       DO xx=2,nx/2
+ ! XL31 :       DO xx=1,nx/2
 
               ac1=hh_C(xx,jj,kk,1)
               ac2=hh_C(xx,jj,kk,2)
@@ -222,6 +233,7 @@ SUBROUTINE TA_nonlinear
 
                k_quad=kx(xx)**2+ky(yy)**2+kz(zz)**2
                k_quad=1._rk/k_quad
+            !    k_quad=1./max(1.0E-10,abs(k_quad))
 
                div=kx(xx)*hh_C(xx,jj,kk,1)&
                   +ky(yy)*hh_C(xx,jj,kk,2)&
@@ -235,7 +247,8 @@ SUBROUTINE TA_nonlinear
  ENDDO XL31
  ENDDO YL30
  ENDDO ZL30
-      ! CALL HIT_alvelius_forcing
+      ! CALL TA_divfree(hh_C)
+      CALL HIT_alvelius_forcing
 
 END SUBROUTINE TA_nonlinear
 
@@ -281,13 +294,18 @@ YL30 :    DO yy=1,ny
            xx=1
            jj=day(yy)
            kk=daz(zz)
-
+            !  IF(jj==1 .AND. kk==1) THEN
+            !    vv_C(xx,jj,kk,1)=CMPLX(0._rk,0._rk)
+            !    vv_C(xx,jj,kk,2)=CMPLX(0._rk,0._rk)
+            !    vv_C(xx,jj,kk,3)=CMPLX(0._rk,0._rk)
+            !  ELSE
                ac1=vv_C(xx,jj,kk,1)
                ac2=vv_C(xx,jj,kk,2)
                ac3=vv_C(xx,jj,kk,3)
 
                k_quad=kx(xx)**2+ky(yy)**2+kz(zz)**2
                k_quad=1._rk/k_quad
+           !     k_quad=1./max(1.0E-10,abs(k_quad))
 
                div=kx(xx)*vv_C(xx,jj,kk,1)&
                   +ky(yy)*vv_C(xx,jj,kk,2)&
@@ -299,9 +317,10 @@ YL30 :    DO yy=1,ny
                vv_C(xx,jj,kk,1)=ac1-div*kx(xx)*k_quad
                vv_C(xx,jj,kk,2)=ac2-div*ky(yy)*k_quad
                vv_C(xx,jj,kk,3)=ac3-div*kz(zz)*k_quad
-
+            !  ENDIF
 
 XL31 :       DO xx=2,nx/2
+! XL31 :       DO xx=1,nx/2
 
              ac1=vv_C(xx,jj,kk,1)
              ac2=vv_C(xx,jj,kk,2)
@@ -309,6 +328,7 @@ XL31 :       DO xx=2,nx/2
 
               k_quad=kx(xx)**2+ky(yy)**2+kz(zz)**2
               k_quad=1._rk/k_quad
+           !    k_quad=1./max(1.0E-10,abs(k_quad))
 
               div=kx(xx)*vv_C(xx,jj,kk,1)&
                  +ky(yy)*vv_C(xx,jj,kk,2)&
@@ -332,4 +352,4 @@ END MODULE time_advancement_mod
 !!!.....................................................................
 !!!.....................................................................
 !!!.....................................................................
-!!TODO routines per statistiche: dissipazione,potenza
+!!TODO routines per statistiche: energia,dissipazione,potenza

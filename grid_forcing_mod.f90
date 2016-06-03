@@ -484,7 +484,7 @@ implicit none
   fv=t_weight(1)*fv_prev+t_weight(2)*fv_next
   fw=t_weight(1)*fw_prev+t_weight(2)*fw_next
 
- ! if (it==3) then
+ ! if (it==31) then
  !       address = 'Variables = "y","z","f1","f2","f3"'
  !       write(777,*) address
  !       address = 'ZONE I=1234 J=1234'

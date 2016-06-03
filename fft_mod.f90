@@ -5,10 +5,9 @@
 MODULE fft_mod
  USE parameters_mod
  USE variables_mod
- USE mpi_mod
+
  implicit none
- ! INCLUDE 'fftw3.f03'
- INCLUDE 'fftw3-mpi.f03'
+ INCLUDE 'fftw3.f03'
 
  !!  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
  !!FFTW variables
@@ -43,18 +42,18 @@ MODULE fft_mod
  SUBROUTINE FFT_initialization
 
 !! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    CALL fftw_mpi_init()
+
 
 !!~   Allocates C vector for the velocity field
-   pointer_uu = fftw_alloc_complex(int((nxp/2+1)*nyp*nzp*3,C_SIZE_T))
-   pointer_hh = fftw_alloc_complex(int((nxp/2+1)*nyp*nzp*3,C_SIZE_T))
-
-!!~   Generates C pointers uuC and uu pointing at the same memory space
-   CALL c_f_pointer(pointer_uu,uu_C,[nxp/2+1,nyp,nzp,3])
-   CALL c_f_pointer(pointer_uu,uu,[nxp+2,nyp,nzp,3])
-
-   CALL c_f_pointer(pointer_hh,hh_C,[nxp/2+1,nyp,nzp,3])
-   CALL c_f_pointer(pointer_hh,hh,[nxp+2,nyp,nzp,3])
+!    pointer_uu = fftw_alloc_complex(int((nxp/2+1)*nyp*nzp*3,C_SIZE_T))
+!    pointer_hh = fftw_alloc_complex(int((nxp/2+1)*nyp*nzp*3,C_SIZE_T))
+!
+! !!~   Generates C pointers uuC and uu pointing at the same memory space
+!    CALL c_f_pointer(pointer_uu,uu_C,[nxp/2+1,nyp,nzp,3])
+!    CALL c_f_pointer(pointer_uu,uu,[nxp+2,nyp,nzp,3])
+!
+!    CALL c_f_pointer(pointer_hh,hh_C,[nxp/2+1,nyp,nzp,3])
+!    CALL c_f_pointer(pointer_hh,hh,[nxp+2,nyp,nzp,3])
 
 !!    FFTW parameters
    rank=3

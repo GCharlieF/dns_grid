@@ -123,7 +123,5 @@ END SUBROUTINE STATS_average_energy
 
 
 END MODULE stats_and_probes_mod
-
-!!TODO proper file for the stats
 !!!.....................................................................
 !!!.....................................................................

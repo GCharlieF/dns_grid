@@ -10,7 +10,7 @@ IMPLICIT NONE
 INTEGER(KIND=ik)                               :: nc
 INTEGER(KIND=ik)                               :: dt_forc
 CHARACTER(LEN=10)                              :: file_gr_rest
-REAL(KIND=rk),DIMENSION(:,:),ALLOCATABLE       :: fu_prev,fv_prev,fw_prev
+REAL(KIND=rk),DIMENSION(:,:),ALLOCATABLE       :: fu_prev,fv_prev,fw_prev      !forcings
 REAL(KIND=rk),DIMENSION(:,:),ALLOCATABLE       :: fu_next,fv_next,fw_next
 REAL(KIND=rk),DIMENSION(:,:),ALLOCATABLE       :: fu,fv,fw
 REAL(KIND=rk)                                  :: f_amp
@@ -21,9 +21,9 @@ REAL(KIND=RK),DIMENSION(2)                     :: t_weight
 
 !!  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
 !! Problem variables
-INTEGER(KIND=ik)                               :: nx,ny,nz
-INTEGER(KIND=ik)                               :: nxp,nyp,nzp
-REAL(KIND=rk)                                  :: xl,yl,zl
+INTEGER(KIND=ik)                               :: nx,ny,nz   !fourier modes
+INTEGER(KIND=ik)                               :: nxp,nyp,nzp   !real points
+REAL(KIND=rk)                                  :: xl,yl,zl   !domain's dimensions
 COMPLEX(KIND=rk),DIMENSION(:),ALLOCATABLE      :: kx,ky,kz
 INTEGER(KIND=ik),DIMENSION(:),ALLOCATABLE      :: day,daz
 COMPLEX(C_DOUBLE_COMPLEX), dimension(:,:,:,:),ALLOCATABLE     ::puu_C
@@ -174,6 +174,10 @@ SUBROUTINE VAR_wave_numbers
 	kz(nz+2-kk) = CMPLX(0._rk,-(2._rk*pi/zl)*REAL(kk-1,KIND=rk))
  ENDDO
 
+ ! write(18,*),kx
+ ! write(19,*),ky
+ ! write(20,*),kz
+ ! stop
 END SUBROUTINE VAR_wave_numbers
 !!!. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 !!!. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -182,13 +186,16 @@ SUBROUTINE VAR_dealiased_indeces
  INTEGER(KIND=ik)                               ::ii
  DO ii=1,ny/2
    day(ii)=ii
+  !  print *,ii,day(ii)
  ENDDO
  DO ii=1,nz/2
    daz(ii)=ii
  ENDDO
  DO ii=ny/2+1,ny
    day(ii)=ii+al*ny/2
+    ! print *,ii,day(ii)
  ENDDO
+ ! stop
  DO ii=nz/2+1,nz
    daz(ii)=ii+al*nz/2
  ENDDO
