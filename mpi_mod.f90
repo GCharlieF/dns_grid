@@ -42,8 +42,11 @@ INTEGER(KIND=IK)                                          :: n_proc
 INTEGER(KIND=IK)                                          :: proc_id
 INTEGER(KIND=IK)                                          :: ierr
 LOGICAL,SAVE                                              :: proc0
+INTEGER(KIND=ik),DIMENSION(:),ALLOCATABLE      :: xr_loc,yr_loc,zr_loc
+INTEGER(KIND=ik),DIMENSION(:),ALLOCATABLE      :: xc_loc,yc_loc,zc_loc
 !!  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
 CONTAINS
+!!!. . . . . . . . . . . MPI INITIALIZE . . . . . . . . . . . . . . . . . . . .
 SUBROUTINE MPI_initialize
       CALL MPI_INIT(ierr)
       CALL MPI_COMM_SIZE (MPI_COMM_WORLD,n_proc,ierr)
@@ -57,9 +60,11 @@ SUBROUTINE MPI_initialize
 !! Sets P3DFFT decomposition to 1D (2D not yet implemented)
       dims(1) = 1
       dims(2) = n_proc
-      PPRINT("'Number of processes ',n_proc")
+      PPRINT("Number of processes")
+      PPRINT(n_proc)
 !! TODO p3dfft docs
-      CALL p3dfft_setup(dims,nxp,nyp,nzp,MPI_COMM_WORLD,nxp,nyp,nzp,.true.)
+      ! CALL p3dfft_setup(dims,nxp,nyp,nzp,MPI_COMM_WORLD,nxp,nyp,nzp,.true.)
+      CALL p3dfft_setup(dims,nxp,nyp,nzp,MPI_COMM_WORLD)
 !!    Gets dimension of local real array
       CALL p3dfft_get_dims(Rstart,Rend,Rsize,1)
 !!    Gets dimension of local complex array
@@ -71,18 +76,45 @@ SUBROUTINE MPI_initialize
       pointer_uu = fftw_alloc_complex(int(Rsize(1)*Rsize(2)*Rsize(3)*3,C_SIZE_T))
       pointer_hh = fftw_alloc_complex(int(Rsize(1)*Rsize(2)*Rsize(3)*3,C_SIZE_T))
 
-      CALL c_f_pointer(pointer_uu,uu_C,[Cstart(1):Cend(1),Cstart(2):Cend(2),Cstart(3):Cend(3),3])
-      CALL c_f_pointer(pointer_uu,uu,[Rstart(1):Rend(1),Rstart(2):Rend(2),Rstart(3):Rend(3),3])
+      CALL c_f_pointer(pointer_uu,uu_C,[Csize(1),Csize(2),Csize(3),3])
+      CALL c_f_pointer(pointer_uu,uu,[Rsize(1),Rsize(2),Rsize(3),3])
 
-      CALL c_f_pointer(pointer_hh,hh_C,[Cstart(1):Cend(1),Cstart(2):Cend(2),Cstart(3):Cend(3),3])
-      CALL c_f_pointer(pointer_hh,hh,[Rstart(1):Rend(1),Rstart(2):Rend(2),Rstart(3):Rend(3),3])
+      CALL c_f_pointer(pointer_hh,hh_C,[Csize(1),Csize(2),Csize(3),3])
+      CALL c_f_pointer(pointer_hh,hh,[Rsize(1),Rsize(2),Rsize(3),3])
+!! TODO Test this
+!! Sets map with local indices
+      ALLOCATE(xr_loc(Rsize(1)))
+      ALLOCATE(yr_loc(Rsize(2)))
+      ALLOCATE(zr_loc(Rsize(3)))
+
+      ALLOCATE(xc_loc(Csize(1)))
+      ALLOCATE(yc_loc(Csize(2)))
+      ALLOCATE(zc_loc(Csize(3)))
+
+      xr_loc(:)=(/Rstart(1):Rend(1)/)
+      yr_loc(:)=(/Rstart(2):Rend(2)/)
+      zr_loc(:)=(/Rstart(3):Rend(3)/)
+
+      xc_loc(:)=(/Cstart(1):Cend(1)/)
+      yc_loc(:)=(/Cstart(2):Cend(2)/)
+      zc_loc(:)=(/Cstart(3):Cend(3)/)
+      CALL_BARRIER
+      uu=cmplx(0.,0.)
+      hh=cmplx(0.,0.)
 
       CALL_BARRIER
+      CALL p3dfft_ftran_r2c_many (uu,Rsize(1)*Rsize(2)*Rsize(3),uu_C, &
+                           Csize(1)*Csize(2)*Csize(3),3,'fft')
+      CALL p3dfft_ftran_r2c_many (hh,Rsize(1)*Rsize(2)*Rsize(3),hh_C, &
+                           Csize(1)*Csize(2)*Csize(3),3,'fft')
 
-      uu_C=cmplx(0._rk,0._rk)
+                           uu_C=cmplx(0.,0.)
+                           hh_C=cmplx(0.,0.)
 END SUBROUTINE MPI_initialize
-!!  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+!!! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
+
+!!! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 END MODULE MPI_mod
 !!!.....................................................................
 !!!.....................................................................

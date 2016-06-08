@@ -4,7 +4,8 @@
 MODULE IO_mod
  USE parameters_mod
  USE variables_mod
- USE fft_mod
+ USE MPI_mod
+ ! USE fft_mod
  implicit none
  INTEGER(KIND=ik),DIMENSION(:),ALLOCATABLE    	  ::ind_x,ind_y,ind_z
 REAL(KIND=rk),DIMENSION(:),ALLOCATABLE 		  ::xc,yc,zc

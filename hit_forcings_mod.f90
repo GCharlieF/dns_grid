@@ -38,7 +38,7 @@ REAL(KIND=rk)                     :: u_rand,v_rand,w_rand
 KE0=f_amp
 
 CALL random_seed(put=[seed(1),seed(1)])
-CALL B_FFT(uu_C,uu)
+! CALL B_FFT(uu_C,uu)
 ZL10: DO zz=1,nzp
 YL10: DO yy=1,nyp
 XL10: DO xx=1,nxp
@@ -55,7 +55,7 @@ ENDDO XL10
 ENDDO YL10
 ENDDO ZL10
 CALL STATS_average_energy(.TRUE.)
-CALL F_FFT(uu,uu_C)
+! CALL F_FFT(uu,uu_C)
 
 END SUBROUTINE HIT_linear_forcing_init
 !!! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .

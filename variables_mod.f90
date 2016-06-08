@@ -119,9 +119,9 @@ END SUBROUTINE VAR_read_input_parameters
 !!!. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 !!!. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 SUBROUTINE VAR_memory_initialization
-  ALLOCATE(puu_C(1:nx/2,1:ny,1:nz,1:3))
+  ALLOCATE(puu_C(1:nx/2,1:ny,1:nz,1:3)) !! FIXME rimuovere +1
 !  ALLOCATE(pcc_C(1:nx/2,1:ny,1:nz,1:3))
- ALLOCATE(kx(1:nx/2))
+ ALLOCATE(kx(1:nx/2))  !! FIXME rimuovere +1
  ALLOCATE(ky(1:ny))
  ALLOCATE(kz(1:nz))
  ALLOCATE(day(1:ny))

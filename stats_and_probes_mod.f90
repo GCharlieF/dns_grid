@@ -5,7 +5,8 @@
 MODULE stats_and_probes_mod
  USE parameters_mod
  USE variables_mod
- USE fft_mod
+ ! USE fft_mod
+ USE MPI_mod
  USE grid_forcing_mod
 
 IMPLICIT NONE
@@ -53,9 +54,9 @@ IMPLICIT NONE
  INTEGER(KIND=ik)                        :: xx,yy,zz,ii
  LOGICAL                                 :: compute_stats
  IF (compute_stats) THEN
- ZL10 :DO zz=1,nzp
- YL10 :DO yy=1,nyp
- XL10 :DO xx=1,nxp
+ ZL10 :DO zz=1,Rsize(3)
+ YL10 :DO yy=1,Rsize(2)
+ XL10 :DO xx=1,Rsize(1)
        DO ii=1,3
        KE=KE+0.5_rk*uu(xx,yy,zz,ii)**2
        KE_ii(ii)=KE_ii(ii)+0.5_rk*uu(xx,yy,zz,ii)**2

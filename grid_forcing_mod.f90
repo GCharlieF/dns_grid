@@ -6,8 +6,9 @@ MODULE grid_forcing_mod
 
 USE parameters_mod
 USE variables_mod
+USE MPI_mod
 implicit none
-
+#INCLUDE 'fpp_macros.h'   !!#INCLUDE fpp macros
 CONTAINS
 
 !!!. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -305,7 +306,7 @@ YN300: DO yn=1,nyp,nyp/nc
         ENDDO YN300
         ENDDO ZN300
 
-
+ !        MASTER then
  !       address = 'Variables = "y","z","f1","f2","f3","f1n","f2n","f3n"'
  !       write(777,*) address
  !       address = 'ZONE I=1234 J=1234'
@@ -319,7 +320,7 @@ YN300: DO yn=1,nyp,nyp/nc
  !            fu_next(y,z),fv_next(y,z),fw_next(y,z)
  ! 4000  continue
  !       stop
-
+ !     endif
 END SUBROUTINE GRID_forcing_init
 !!!. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
@@ -484,7 +485,9 @@ implicit none
   fv=t_weight(1)*fv_prev+t_weight(2)*fv_next
   fw=t_weight(1)*fw_prev+t_weight(2)*fw_next
 
- ! if (it==31) then
+
+ ! ! if (it==31) then
+ !   MASTER then
  !       address = 'Variables = "y","z","f1","f2","f3"'
  !       write(777,*) address
  !       address = 'ZONE I=1234 J=1234'

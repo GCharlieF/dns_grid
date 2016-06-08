@@ -4,11 +4,12 @@
 MODULE time_advancement_mod
 USE parameters_mod
 USE variables_mod
-USE fft_mod
+USE MPI_mod
+! USE fft_mod
 USE grid_forcing_mod
 USE stats_and_probes_mod
-USE hit_forcings_mod
-
+! USE hit_forcings_mod
+#INCLUDE 'fpp_macros.h'
 implicit none
 
 REAL(KIND=rk),DIMENSION(4,3:4)            :: ark,brk
@@ -68,14 +69,11 @@ INTEGER(KIND=ik)                             :: zz,yy,xx,jj,kk
 
  qnrk=dt*brk(n_k,rk_steps)*pnrk
 
- ZL10: DO zz=1,nz
- YL10: DO yy=1,ny
- XL10: DO xx=1,nx/2
-       jj=day(yy)
-       kk=daz(zz)
-       k_quad=(kx(xx)**2+ky(yy)**2+kz(zz)**2)
-       puu_C(xx,yy,zz,:)=(pnrk+k_quad)*uu_C(xx,jj,kk,:)+qnrk*hh_C(xx,jj,kk,:)
-
+ ZL10: DO zz=1,Csize(3)
+ YL10: DO yy=1,Csize(2)
+ XL10: DO xx=1,Csize(1)-1
+       k_quad=(kx(xc_loc(xx))**2+ky(yc_loc(yy))**2+kz(zc_loc(zz))**2)
+       puu_C(xx,yy,zz,:)=(pnrk+k_quad)*uu_C(xx,yy,zz,:)+qnrk*hh_C(xx,yy,zz,:)
  ENDDO XL10
  ENDDO YL10
  ENDDO ZL10
@@ -87,9 +85,9 @@ INTEGER(KIND=ik)                             :: zz,yy,xx,jj,kk
  zz=12
  jj=day(yy)
  kk=daz(zz)
- k_quad=(kx(xx)**2+ky(yy)**2+kz(zz)**2)
+ k_quad=(kx(xc_loc(xx))**2+ky(yc_loc(yy))**2+kz(zc_loc(zz))**2)
  print *,pnrk,k_quad,ark(n_k,rk_steps),brk(n_k,rk_steps)
- print *,pnrk+k_quad,qnrk*hh_C(xx,jj,kk,1)
+ print *,pnrk+k_quad,qnrk*hh_C(xx,yy,zz,1)
 END SUBROUTINE TA_partial_right_hand_side
 
 !! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -121,32 +119,49 @@ SUBROUTINE TA_nonlinear
 
 
  !! Computes vorticity in the fourier space and puts it in hu hv hw
- ZL10 : DO zz=1,nz
- YL10 :    DO yy=1,ny
- XL10 :       DO xx=1,nx/2
+ ZL10 : DO zz=1,Csize(3)
+ YL10 :    DO yy=1,Csize(2)
+ XL10 :       DO xx=1,Csize(1)-1
              jj=day(yy)
              kk=daz(zz)
-             hh_C(xx,jj,kk,:)=cross((/ kx(xx), ky(yy), kz(zz) /),&
-             (/ uu_C(xx,jj,kk,1), uu_C(xx,jj,kk,2), uu_C(xx,jj,kk,3) /))
+             hh_C(xx,yy,zz,:)=cross((/ kx(xc_loc(xx)), ky(yc_loc(yy)), kz(zc_loc(zz)) /),&
+             (/ uu_C(xx,yy,zz,1), uu_C(xx,yy,zz,2), uu_C(xx,yy,zz,3) /))
               ENDDO XL10
           ENDDO YL10
        ENDDO ZL10
 
-    CALL B_FFT(hh_C,hh)
-    CALL B_FFT(uu_C,uu)
+    ! CALL B_FFT(hh_C,hh)
+    ! CALL B_FFT(uu_C,uu)
+     print *,'fft',uu_C(7,12,12,1)
+     print *,'fft',hh_C(7,12,12,1)
 
-    print *,'u ta   ::',uu(12,12,12,1)
-    print *,'hh ta  ::',hh(12,12,12,1)
+    CALL_BARRIER
+
+    CALL p3dfft_btran_c2r_many (uu_C,Csize(1)*Csize(2)*Csize(3),uu, &
+                Rsize(1)*Rsize(2)*Rsize(3),3,'tff')
+    CALL p3dfft_btran_c2r_many (hh_C,Csize(1)*Csize(2)*Csize(3),hh, &
+                Rsize(1)*Rsize(2)*Rsize(3),3,'tff')
+
+    CALL_BARRIER
+    print *,'u ta   ::',uu(4,4,4,1)
+    print *,'hh ta  ::',hh(4,4,4,1)
 
     CALL STATS_average_energy(stats_time)
+        DO zz=1,nzp
+         DO yy=1,nxp
+              if (fu(yy,zz)/=fu(yy,zz)) print *,yy,zz,1
+              if (fv(yy,zz)/=fv(yy,zz)) print *,yy,zz,2
+              if (fw(yy,zz)/=fw(yy,zz)) print *,yy,zz,3
+            ENDDO
+            ENDDO
 
 !! Compute non-linear term in the phisical space
 !! If within the forced region adds the forcing term multiplied by
 !! a gaussian distribution function of xx
          ff1=0.;ff2=0.;ff3=0.
-  ZL20 : DO zz=1,nzp
-  YL20 : DO yy=1,nyp
-  XL20 : DO xx=1,nxp
+  ZL20 : DO zz=1,Rsize(3)
+  YL20 : DO yy=1,Rsize(2)
+  XL20 : DO xx=1,Rsize(1)
          a1=uu(xx,yy,zz,1)
          a2=uu(xx,yy,zz,2)
          a3=uu(xx,yy,zz,3)
@@ -164,92 +179,99 @@ SUBROUTINE TA_nonlinear
 
         !! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         !! Forcing input in the physical space for the grid forcing
-         IF (REAL(xx,KIND=rk) > xf_min-nxp/8 .AND. REAL(xx,KIND=rk) < xf_max +nxp/8) THEN
+         IF (REAL(xr_loc(xx),KIND=rk) > xf_min-nxp/8 .AND. REAL(xr_loc(xx),KIND=rk) < xf_max +nxp/8) THEN
 
-      !    amp_x=coeff*EXP(- (REAL(xx-nxp/2,KIND=rk)*xl/REAL(nxp,KIND=rk) )**2/sigma)
-         amp_x=0.5*(1 + TANH(aa*(delta_xf-abs(REAL(nxp/2-xx,KIND=rk))*xl/REAL(nxp,KIND=rk) )))
+         amp_x=coeff*EXP(- (REAL(xr_loc(xx)-nxp/2,KIND=rk)*xl/REAL(nxp,KIND=rk) )**2/sigma)
+         amp_x=0.5*(1 + TANH(aa*(delta_xf-abs(REAL(nxp/2-xr_loc(xx),KIND=rk))*xl/REAL(nxp,KIND=rk) )))
 
-         hh(xx,yy,zz,1)=hh(xx,yy,zz,1) + fu(yy,zz)*amp_x
-         hh(xx,yy,zz,2)=hh(xx,yy,zz,2) + fv(yy,zz)*amp_x
-         hh(xx,yy,zz,3)=hh(xx,yy,zz,3) + fw(yy,zz)*amp_x
-         ff1=ff1+(fu(yy,zz)*amp_x)**2/REAL(nxp*nyp*nzp,KIND=rk)
-         ff2=ff2+(fv(yy,zz)*amp_x)**2/REAL(nxp*nyp*nzp,KIND=rk)
-         ff3=ff3+(fw(yy,zz)*amp_x)**2/REAL(nxp*nyp*nzp,KIND=rk)
+         hh(xx,yy,zz,1)=hh(xx,yy,zz,1) + fu(yr_loc(yy),zr_loc(zz))*amp_x
+         hh(xx,yy,zz,2)=hh(xx,yy,zz,2) + fv(yr_loc(yy),zr_loc(zz))*amp_x
+         hh(xx,yy,zz,3)=hh(xx,yy,zz,3) + fw(yr_loc(yy),zr_loc(zz))*amp_x
+         ff1=ff1+(fu(yr_loc(yy),zr_loc(zz))*amp_x)**2/REAL(nxp*nyp*nzp,KIND=rk)
+         ff2=ff2+(fv(yr_loc(yy),zr_loc(zz))*amp_x)**2/REAL(nxp*nyp*nzp,KIND=rk)
+         ff3=ff3+(fw(yr_loc(yy),zr_loc(zz))*amp_x)**2/REAL(nxp*nyp*nzp,KIND=rk)
          ENDIF
          !! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
   ENDDO XL20
   ENDDO YL20
   ENDDO ZL20
-         print *,'ff',ff1,ff2,ff3,hh(nxp/2,nyp/2,nzp/2,1)
+      !    print *,'ff',ff1,ff2,ff3,hh(nxp/2,nyp/2,nzp/2,1)
 
    CALL STATS_compute_CFL
 
    ! CALL HIT_linear_forcing
 
-   CALL F_FFT(hh,hh_C)
-   CALL F_FFT(uu,uu_C)
-
-
-
+   ! CALL F_FFT(hh,hh_C)
+   ! CALL F_FFT(uu,uu_C)
+   CALL_BARRIER
+   CALL p3dfft_ftran_r2c_many (uu,Rsize(1)*Rsize(2)*Rsize(3),uu_C, &
+                           Csize(1)*Csize(2)*Csize(3),3,'fft')
+   CALL p3dfft_ftran_r2c_many (hh,Rsize(1)*Rsize(2)*Rsize(3),hh_C, &
+                           Csize(1)*Csize(2)*Csize(3),3,'fft')
+    uu_C=uu_C/REAL(nxp*nyp*nzp,KIND=rk)
+    hh_C=hh_C/REAL(nxp*nyp*nzp,KIND=rk)
+     if (proc_id==0) then
+           print *,'forcing'
    ! hh_C(4,4,4,1)=hh_C(4,4,4,1)+CMPLX(1_rk,1_rk)
    ! hh_C(4,4,4,2)=hh_C(4,4,4,2)+CMPLX(1_rk,1_rk)
    ! hh_C(4,4,4,3)=hh_C(4,4,4,3)+CMPLX(1_rk,1_rk)
-
- ZL30 : DO zz=1,nz
- YL30 :    DO yy=1,ny
+endif
+! print *,'forc',hh_C(4,4,4,3)
+ ZL30 : DO zz=1,Csize(3)
+ YL30 :    DO yy=1,Csize(2)
             xx=1
             jj=day(yy)
             kk=daz(zz)
-              IF(jj==1 .AND. kk==1) THEN
-                hh_C(xx,jj,kk,1)=CMPLX(0._rk,0._rk)
-                hh_C(xx,jj,kk,2)=CMPLX(0._rk,0._rk)
-                hh_C(xx,jj,kk,3)=CMPLX(0._rk,0._rk)
+              IF(yc_loc(yy)==1 .AND. zc_loc(zz)==1) THEN
+                hh_C(xx,yy,zz,1)=CMPLX(0._rk,0._rk)
+                hh_C(xx,yy,zz,2)=CMPLX(0._rk,0._rk)
+                hh_C(xx,yy,zz,3)=CMPLX(0._rk,0._rk)
               ELSE
-                ac1=hh_C(xx,jj,kk,1)
-                ac2=hh_C(xx,jj,kk,2)
-                ac3=hh_C(xx,jj,kk,3)
+                ac1=hh_C(xx,yy,zz,1)
+                ac2=hh_C(xx,yy,zz,2)
+                ac3=hh_C(xx,yy,zz,3)
 
-                k_quad=kx(xx)**2+ky(yy)**2+kz(zz)**2
+                k_quad=kx(xc_loc(xx))**2+ky(yc_loc(yy))**2+kz(zc_loc(zz))**2
                 k_quad=1._rk/k_quad
             !     k_quad=1./max(1.0E-10,abs(k_quad))
 
-                div=kx(xx)*hh_C(xx,jj,kk,1)&
-                   +ky(yy)*hh_C(xx,jj,kk,2)&
-                   +kz(zz)*hh_C(xx,jj,kk,3)
+                div=kx(xc_loc(xx))*hh_C(xx,yy,zz,1)&
+                   +ky(yc_loc(yy))*hh_C(xx,yy,zz,2)&
+                   +kz(zc_loc(zz))*hh_C(xx,yy,zz,3)
 
 
-                hh_C(xx,jj,kk,1)=ac1-div*kx(xx)*k_quad
-                hh_C(xx,jj,kk,2)=ac2-div*ky(yy)*k_quad
-                hh_C(xx,jj,kk,3)=ac3-div*kz(zz)*k_quad
+                hh_C(xx,yy,zz,1)=ac1-div*kx(xc_loc(xx))*k_quad
+                hh_C(xx,yy,zz,2)=ac2-div*ky(yc_loc(yy))*k_quad
+                hh_C(xx,yy,zz,3)=ac3-div*kz(zc_loc(zz))*k_quad
               ENDIF
 
- XL31 :       DO xx=2,nx/2
+ XL31 :       DO xx=2,Csize(1)-1
  ! XL31 :       DO xx=1,nx/2
 
-              ac1=hh_C(xx,jj,kk,1)
-              ac2=hh_C(xx,jj,kk,2)
-              ac3=hh_C(xx,jj,kk,3)
+              ac1=hh_C(xx,yy,zz,1)
+              ac2=hh_C(xx,yy,zz,2)
+              ac3=hh_C(xx,yy,zz,3)
 
-               k_quad=kx(xx)**2+ky(yy)**2+kz(zz)**2
+               k_quad=kx(xc_loc(xx))**2+ky(yc_loc(yy))**2+kz(zc_loc(zz))**2
                k_quad=1._rk/k_quad
             !    k_quad=1./max(1.0E-10,abs(k_quad))
 
-               div=kx(xx)*hh_C(xx,jj,kk,1)&
-                  +ky(yy)*hh_C(xx,jj,kk,2)&
-                  +kz(zz)*hh_C(xx,jj,kk,3)
+               div=kx(xc_loc(xx))*hh_C(xx,yy,zz,1)&
+                  +ky(yc_loc(yy))*hh_C(xx,yy,zz,2)&
+                  +kz(zc_loc(zz))*hh_C(xx,yy,zz,3)
 
-                  hh_C(xx,jj,kk,1)=ac1-div*kx(xx)*k_quad
-                  hh_C(xx,jj,kk,2)=ac2-div*ky(yy)*k_quad
-                  hh_C(xx,jj,kk,3)=ac3-div*kz(zz)*k_quad
+                  hh_C(xx,yy,zz,1)=ac1-div*kx(xc_loc(xx))*k_quad
+                  hh_C(xx,yy,zz,2)=ac2-div*ky(yc_loc(yy))*k_quad
+                  hh_C(xx,yy,zz,3)=ac3-div*kz(zc_loc(zz))*k_quad
 
 
  ENDDO XL31
  ENDDO YL30
  ENDDO ZL30
       ! CALL TA_divfree(hh_C)
-      CALL HIT_alvelius_forcing
-
+      ! CALL HIT_alvelius_forcing
+ print *,'prima di lin',hh_C(7,12,12,1)
 END SUBROUTINE TA_nonlinear
 
 !! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -266,17 +288,20 @@ SUBROUTINE TA_linear
 
  qnrk=dt*ark(n_k,rk_steps)*pnrk
 
- ZL10 : DO zz=1,nz
- YL10 : DO yy=1,ny
- XL10 : DO xx=1,nx/2
+ ZL10 : DO zz=1,Csize(3)
+ YL10 : DO yy=1,Csize(2)
+ XL10 : DO xx=1,Csize(1)-1
                jj=day(yy)
                kk=daz(zz)
-               k_quad=kx(xx)**2+ky(yy)**2+kz(zz)**2
+               k_quad=kx(xc_loc(xx))**2+ky(yc_loc(yy))**2+kz(zc_loc(zz))**2
                den=1./(pnrk-k_quad)
-               uu_C(xx,jj,kk,:)=(puu_C(xx,yy,zz,:)+qnrk*hh_C(xx,jj,kk,:))*den
+               uu_C(xx,yy,zz,:)=(puu_C(xx,yy,zz,:)+qnrk*hh_C(xx,yy,zz,:))*den
+
  ENDDO XL10
  ENDDO YL10
  ENDDO ZL10
+  print *,'linear',puu_C(7,12,12,1)
+ print *,'linear',uu_C(7,12,12,1)
 END SUBROUTINE TA_linear
 !! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 !! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -289,54 +314,54 @@ COMPLEX(KIND=rk)                                   :: k_quad
 COMPLEX(KIND=rk)                                   :: ac1,ac2,ac3,div
 COMPLEX(KIND=rk),DIMENSION(:,:,:,:), INTENT(INOUT) :: vv_C
 
-ZL30 : DO zz=1,nz
-YL30 :    DO yy=1,ny
+ZL30 : DO zz=1,Csize(3)
+YL30 :    DO yy=1,Csize(2)
            xx=1
            jj=day(yy)
            kk=daz(zz)
-            !  IF(jj==1 .AND. kk==1) THEN
-            !    vv_C(xx,jj,kk,1)=CMPLX(0._rk,0._rk)
-            !    vv_C(xx,jj,kk,2)=CMPLX(0._rk,0._rk)
-            !    vv_C(xx,jj,kk,3)=CMPLX(0._rk,0._rk)
+            !  IF(jj==1 .AND. zz==1) THEN
+            !    vv_C(xx,jj,zz,1)=CMPLX(0._rk,0._rk)
+            !    vv_C(xx,jj,zz,2)=CMPLX(0._rk,0._rk)
+            !    vv_C(xx,jj,zz,3)=CMPLX(0._rk,0._rk)
             !  ELSE
-               ac1=vv_C(xx,jj,kk,1)
-               ac2=vv_C(xx,jj,kk,2)
-               ac3=vv_C(xx,jj,kk,3)
+               ac1=vv_C(xx,yy,zz,1)
+               ac2=vv_C(xx,yy,zz,2)
+               ac3=vv_C(xx,yy,zz,3)
 
-               k_quad=kx(xx)**2+ky(yy)**2+kz(zz)**2
+               k_quad=kx(xc_loc(xx))**2+ky(yc_loc(yy))**2+kz(zc_loc(zz))**2
                k_quad=1._rk/k_quad
            !     k_quad=1./max(1.0E-10,abs(k_quad))
 
-               div=kx(xx)*vv_C(xx,jj,kk,1)&
-                  +ky(yy)*vv_C(xx,jj,kk,2)&
-                  +kz(zz)*vv_C(xx,jj,kk,3)
-             IF(jj==1 .AND. kk==1) THEN
+               div=kx(xc_loc(xx))*vv_C(xx,yy,zz,1)&
+                  +ky(yc_loc(yy))*vv_C(xx,yy,zz,2)&
+                  +kz(zc_loc(zz))*vv_C(xx,yy,zz,3)
+             IF(yy==1 .AND. zz==1) THEN
                    k_quad=CMPLX(0._rk,0._rk)
              ENDIF
 
-               vv_C(xx,jj,kk,1)=ac1-div*kx(xx)*k_quad
-               vv_C(xx,jj,kk,2)=ac2-div*ky(yy)*k_quad
-               vv_C(xx,jj,kk,3)=ac3-div*kz(zz)*k_quad
+               vv_C(xx,yy,zz,1)=ac1-div*kx(xc_loc(xx))*k_quad
+               vv_C(xx,yy,zz,2)=ac2-div*ky(yc_loc(yy))*k_quad
+               vv_C(xx,yy,zz,3)=ac3-div*kz(zc_loc(zz))*k_quad
             !  ENDIF
 
-XL31 :       DO xx=2,nx/2
+XL31 :       DO xx=2,Csize(1)-1
 ! XL31 :       DO xx=1,nx/2
 
-             ac1=vv_C(xx,jj,kk,1)
-             ac2=vv_C(xx,jj,kk,2)
-             ac3=vv_C(xx,jj,kk,3)
+             ac1=vv_C(xx,yy,zz,1)
+             ac2=vv_C(xx,yy,zz,2)
+             ac3=vv_C(xx,yy,zz,3)
 
-              k_quad=kx(xx)**2+ky(yy)**2+kz(zz)**2
+              k_quad=kx(xc_loc(xx))**2+ky(yc_loc(yy))**2+kz(zc_loc(zz))**2
               k_quad=1._rk/k_quad
            !    k_quad=1./max(1.0E-10,abs(k_quad))
 
-              div=kx(xx)*vv_C(xx,jj,kk,1)&
-                 +ky(yy)*vv_C(xx,jj,kk,2)&
-                 +kz(zz)*vv_C(xx,jj,kk,3)
+              div=kx(xc_loc(xx))*vv_C(xx,yy,zz,1)&
+                 +ky(yc_loc(yy))*vv_C(xx,yy,zz,2)&
+                 +kz(zc_loc(zz))*vv_C(xx,yy,zz,3)
 
-                 vv_C(xx,jj,kk,1)=ac1-div*kx(xx)*k_quad
-                 vv_C(xx,jj,kk,2)=ac2-div*ky(yy)*k_quad
-                 vv_C(xx,jj,kk,3)=ac3-div*kz(zz)*k_quad
+                 vv_C(xx,yy,zz,1)=ac1-div*kx(xc_loc(xx))*k_quad
+                 vv_C(xx,yy,zz,2)=ac2-div*ky(yc_loc(yy))*k_quad
+                 vv_C(xx,yy,zz,3)=ac3-div*kz(zc_loc(zz))*k_quad
 
 
 ENDDO XL31

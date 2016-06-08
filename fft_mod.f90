@@ -14,20 +14,20 @@ MODULE fft_mod
    INTEGER,SAVE                                           ::plan_type=FFTW_ESTIMATE
    TYPE(C_PTR),SAVE                                       ::plan_ub,plan_uf
   !  TYPE(C_PTR),SAVE                                       ::plan_cb,plan_cf
-   REAL(C_DOUBLE),pointer,DIMENSION(:,:,:,:)              ::uu
-   REAL(C_DOUBLE),pointer,DIMENSION(:,:,:,:)              ::hh
+  !  REAL(C_DOUBLE),pointer,DIMENSION(:,:,:,:)              ::uu
+  !  REAL(C_DOUBLE),pointer,DIMENSION(:,:,:,:)              ::hh
   !  REAL(C_DOUBLE),pointer,DIMENSION(:,:,:,:)              ::cc
   !  REAL(C_DOUBLE),pointer,DIMENSION(:,:,:,:)              ::hcc
   !  REAL(C_DOUBLE),pointer,DIMENSION(:,:,:,:)              ::app_cc
 
-   COMPLEX(C_DOUBLE_COMPLEX), pointer, dimension(:,:,:,:) ::uu_C
-   COMPLEX(C_DOUBLE_COMPLEX), pointer, dimension(:,:,:,:) ::hh_C
+  !  COMPLEX(C_DOUBLE_COMPLEX), pointer, dimension(:,:,:,:) ::uu_C
+  !  COMPLEX(C_DOUBLE_COMPLEX), pointer, dimension(:,:,:,:) ::hh_C
   !  COMPLEX(C_DOUBLE_COMPLEX), pointer, dimension(:,:,:,:) ::cc_C
   !  COMPLEX(C_DOUBLE_COMPLEX), pointer, dimension(:,:,:,:) ::hcc_C
   !  COMPLEX(C_DOUBLE_COMPLEX), pointer, dimension(:,:,:,:) ::app_cc_C
 
-   TYPE(C_PTR)                                            :: pointer_uu
-   TYPE(C_PTR)                                            :: pointer_hh
+  !  TYPE(C_PTR)                                            :: pointer_uu
+  !  TYPE(C_PTR)                                            :: pointer_hh
   !  TYPE(C_PTR)                                            :: pointer_cc
   !  TYPE(C_PTR)                                            :: pointer_hcc
   !  TYPE(C_PTR)                                            :: pointer_app_cc
@@ -77,11 +77,11 @@ MODULE fft_mod
 !~ 	     CALL dfftw_plan_with_nthreads(2)
 !    Create plan for the FFT
 
-    plan_ub=fftw_plan_many_dft_c2r(rank,numb,howmany,uu_C,&
-            inembed,istride,idist,uu,onembed,ostride,odist,plan_type)
-
-    plan_uf=fftw_plan_many_dft_r2c(rank,numb,howmany,uu,&
-            onembed,ostride,odist,uu_C,inembed,istride,idist,plan_type)
+    ! plan_ub=fftw_plan_many_dft_c2r(rank,numb,howmany,uu_C,&
+    !         inembed,istride,idist,uu,onembed,ostride,odist,plan_type)
+    !
+    ! plan_uf=fftw_plan_many_dft_r2c(rank,numb,howmany,uu,&
+    !         onembed,ostride,odist,uu_C,inembed,istride,idist,plan_type)
 
 
 !!   Allocates C vector for the velocity field
@@ -138,7 +138,7 @@ SUBROUTINE B_FFT(vf_C,vf)
       !!De-aliasing
       IF (al==1) vf_C(nx/2+1:nxp/2,ny/2+1:ny/2+ny/2,nz/2+1:nz/2+nz/2,:)=CMPLX(0._RK,0._RK)
 
-      CALL fftw_execute_dft_c2r(plan_ub,vf_C,vf)
+      ! CALL fftw_execute_dft_c2r(plan_ub,vf_C,vf)
 
 END SUBROUTINE B_FFT
 !!!. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -151,7 +151,7 @@ SUBROUTINE F_FFT(vf,vf_C)
 
 !!!.   .    .   .    .   .    .   .    .   .    .   .    .   .    .   .
 
-      CALL fftw_execute_dft_r2c(plan_uf,vf,vf_C)
+      ! CALL fftw_execute_dft_r2c(plan_uf,vf,vf_C)
       vf_C=vf_C/REAL(nxp*nyp*nzp,KIND=rk)
 
 END SUBROUTINE F_FFT
@@ -187,8 +187,8 @@ END SUBROUTINE F_FFT
 !!!. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 SUBROUTINE free_FFT
 
-     CALL fftw_free(pointer_uu)
-     CALL fftw_free(pointer_hh)
+    !  CALL fftw_free(pointer_uu)
+    !  CALL fftw_free(pointer_hh)
     !  CALL fftw_free(pointer_cc)
     !  CALL fftw_free(pointer_hcc)
 
