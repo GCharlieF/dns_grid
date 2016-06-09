@@ -147,13 +147,13 @@ SUBROUTINE TA_nonlinear
     print *,'hh ta  ::',hh(4,4,4,1)
 
     CALL STATS_average_energy(stats_time)
-        DO zz=1,nzp
-         DO yy=1,nxp
-              if (fu(yy,zz)/=fu(yy,zz)) print *,yy,zz,1
-              if (fv(yy,zz)/=fv(yy,zz)) print *,yy,zz,2
-              if (fw(yy,zz)/=fw(yy,zz)) print *,yy,zz,3
-            ENDDO
-            ENDDO
+      !   DO zz=1,nzp
+      !    DO yy=1,nxp
+      !         if (fu(yy,zz)/=fu(yy,zz)) print *,yy,zz,1
+      !         if (fv(yy,zz)/=fv(yy,zz)) print *,yy,zz,2
+      !         if (fw(yy,zz)/=fw(yy,zz)) print *,yy,zz,3
+      !       ENDDO
+      !       ENDDO
 
 !! Compute non-linear term in the phisical space
 !! If within the forced region adds the forcing term multiplied by
@@ -179,18 +179,18 @@ SUBROUTINE TA_nonlinear
 
         !! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         !! Forcing input in the physical space for the grid forcing
-         IF (REAL(xr_loc(xx),KIND=rk) > xf_min-nxp/8 .AND. REAL(xr_loc(xx),KIND=rk) < xf_max +nxp/8) THEN
-
-         amp_x=coeff*EXP(- (REAL(xr_loc(xx)-nxp/2,KIND=rk)*xl/REAL(nxp,KIND=rk) )**2/sigma)
-         amp_x=0.5*(1 + TANH(aa*(delta_xf-abs(REAL(nxp/2-xr_loc(xx),KIND=rk))*xl/REAL(nxp,KIND=rk) )))
-
-         hh(xx,yy,zz,1)=hh(xx,yy,zz,1) + fu(yr_loc(yy),zr_loc(zz))*amp_x
-         hh(xx,yy,zz,2)=hh(xx,yy,zz,2) + fv(yr_loc(yy),zr_loc(zz))*amp_x
-         hh(xx,yy,zz,3)=hh(xx,yy,zz,3) + fw(yr_loc(yy),zr_loc(zz))*amp_x
-         ff1=ff1+(fu(yr_loc(yy),zr_loc(zz))*amp_x)**2/REAL(nxp*nyp*nzp,KIND=rk)
-         ff2=ff2+(fv(yr_loc(yy),zr_loc(zz))*amp_x)**2/REAL(nxp*nyp*nzp,KIND=rk)
-         ff3=ff3+(fw(yr_loc(yy),zr_loc(zz))*amp_x)**2/REAL(nxp*nyp*nzp,KIND=rk)
-         ENDIF
+      !    IF (REAL(xr_loc(xx),KIND=rk) > xf_min-nxp/8 .AND. REAL(xr_loc(xx),KIND=rk) < xf_max +nxp/8) THEN
+         !
+      !    amp_x=coeff*EXP(- (REAL(xr_loc(xx)-nxp/2,KIND=rk)*xl/REAL(nxp,KIND=rk) )**2/sigma)
+      !    amp_x=0.5*(1 + TANH(aa*(delta_xf-abs(REAL(nxp/2-xr_loc(xx),KIND=rk))*xl/REAL(nxp,KIND=rk) )))
+         !
+      !    hh(xx,yy,zz,1)=hh(xx,yy,zz,1) + fu(yr_loc(yy),zr_loc(zz))*amp_x
+      !    hh(xx,yy,zz,2)=hh(xx,yy,zz,2) + fv(yr_loc(yy),zr_loc(zz))*amp_x
+      !    hh(xx,yy,zz,3)=hh(xx,yy,zz,3) + fw(yr_loc(yy),zr_loc(zz))*amp_x
+      !    ff1=ff1+(fu(yr_loc(yy),zr_loc(zz))*amp_x)**2/REAL(nxp*nyp*nzp,KIND=rk)
+      !    ff2=ff2+(fv(yr_loc(yy),zr_loc(zz))*amp_x)**2/REAL(nxp*nyp*nzp,KIND=rk)
+      !    ff3=ff3+(fw(yr_loc(yy),zr_loc(zz))*amp_x)**2/REAL(nxp*nyp*nzp,KIND=rk)
+      !    ENDIF
          !! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
   ENDDO XL20
@@ -201,7 +201,15 @@ SUBROUTINE TA_nonlinear
    CALL STATS_compute_CFL
 
    ! CALL HIT_linear_forcing
-
+   if (proc_id==0) then
+         if (it==3) then
+                do xx=1,nxp
+                write(18,*) uu(xx,1,1,1),uu(xx,1,1,2),uu(xx,1,1,3)
+                enddo
+                CALL_BARRIER
+                  stop
+          endif
+   endif
    ! CALL F_FFT(hh,hh_C)
    ! CALL F_FFT(uu,uu_C)
    CALL_BARRIER
@@ -209,14 +217,50 @@ SUBROUTINE TA_nonlinear
                            Csize(1)*Csize(2)*Csize(3),3,'fft')
    CALL p3dfft_ftran_r2c_many (hh,Rsize(1)*Rsize(2)*Rsize(3),hh_C, &
                            Csize(1)*Csize(2)*Csize(3),3,'fft')
+
     uu_C=uu_C/REAL(nxp*nyp*nzp,KIND=rk)
     hh_C=hh_C/REAL(nxp*nyp*nzp,KIND=rk)
-     if (proc_id==0) then
-           print *,'forcing'
-   ! hh_C(4,4,4,1)=hh_C(4,4,4,1)+CMPLX(1_rk,1_rk)
-   ! hh_C(4,4,4,2)=hh_C(4,4,4,2)+CMPLX(1_rk,1_rk)
-   ! hh_C(4,4,4,3)=hh_C(4,4,4,3)+CMPLX(1_rk,1_rk)
+    ! if (it==3) then
+    !       write(18,*) real(uu_C(:,1,1,:))
+    !       stop
+    ! endif
+
+if (yc_loc(1)==1) then
+hh_C(5,1,1,1)=hh_C(5,1,1,1)+CMPLX(0_rk,0_rk)
+hh_C(5,1,1,2)=hh_C(5,1,1,2)+CMPLX(0_rk,-0.5_rk)
+hh_C(5,1,1,3)=hh_C(5,1,1,3)+CMPLX(0.5_rk,0_rk)
 endif
+
+if (yc_loc(1)==1) then
+hh_C(1,5,1,1)=hh_C(1,5,1,1)+CMPLX(0.5_rk,0_rk)
+hh_C(1,5,1,2)=hh_C(1,5,1,2)+CMPLX(0_rk,0_rk)
+hh_C(1,5,1,3)=hh_C(1,5,1,3)+CMPLX(0_rk,-0.5_rk)
+endif
+
+if (yc_loc(Csize(2)-5+2)==ny-5+2) then
+hh_C(1,Csize(2)-5+2,1,1)=hh_C(1,Csize(2)-5+2,1,1)+CMPLX(0.5_rk,0_rk)
+hh_C(1,Csize(2)-5+2,1,2)=hh_C(1,Csize(2)-5+2,1,2)+CMPLX(0_rk,0_rk)
+hh_C(1,Csize(2)-5+2,1,3)=hh_C(1,Csize(2)-5+2,1,3)+CMPLX(0_rk,0.5_rk)
+endif
+
+if (yc_loc(1)==1) then
+if (zc_loc(1)==1) then
+hh_C(1,1,5,1)=hh_C(1,1,5,1)+CMPLX(0_rk,-0.5_rk)
+hh_C(1,1,5,2)=hh_C(1,1,5,2)+CMPLX(0.5_rk,0_rk)
+hh_C(1,1,5,3)=hh_C(1,1,5,3)+CMPLX(0_rk,0_rk)
+endif
+
+if (zc_loc(Csize(3)-5+2)==nz-5+2) then
+
+hh_C(1,1,Csize(3)-5+2,1)=hh_C(1,1,Csize(3)-5+2,1)+CMPLX(0_rk,0.5_rk)
+hh_C(1,1,Csize(3)-5+2,2)=hh_C(1,1,Csize(3)-5+2,2)+CMPLX(0.5_rk,0_rk)
+hh_C(1,1,Csize(3)-5+2,3)=hh_C(1,1,Csize(3)-5+2,3)+CMPLX(0_rk,0_rk)
+endif
+endif
+
+! hh_C(4,4,4,2)=hh_C(4,4,4,2)+CMPLX(1_rk,1_rk)
+! hh_C(4,4,4,3)=hh_C(4,4,4,3)+CMPLX(1_rk,1_rk)
+
 ! print *,'forc',hh_C(4,4,4,3)
  ZL30 : DO zz=1,Csize(3)
  YL30 :    DO yy=1,Csize(2)
