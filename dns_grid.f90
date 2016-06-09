@@ -1,4 +1,13 @@
 !=======================================================================
+!! TODO Parrallel IO
+!! TODO Parallel grid_forcing (check random number generation)
+!! TODO change x_loc,y_loc,z_loc in something more readable (preprocessor?)
+!! TODO Clean,comment and explain
+!! TODO Alvelious?
+!! TODO way to avoid first r2c transform in MPI_initialize
+!! TODO MPI communication for statistics
+!! TODO remove fft_mod
+!! TODO De-aliasing
 !=======================================================================
 PROGRAM dns_grid
 USE parameters_mod                                !! PAR
@@ -21,22 +30,17 @@ INTEGER :: mm
 CALL VAR_read_input_parameters
 CALL MPI_initialize
 CALL VAR_memory_initialization
-! CALL FFT_initialization
 CALL VAR_wave_numbers
 ! CALL IO_read_field
-! CALL IO_re_indexing
 CALL TA_rk_initialize
 CALL VAR_dealiased_indeces   !! FIXME To be removed
 CALL GRID_forcing_init
-! CALL HIT_alvelius_forcing_init
-! CALL HIT_linear_forcing_init
-! CALL TA_divfree(uu_C)
+
 t=REAL(itmin,KIND=rk)*dt
 it=0
 CALL_BARRIER
-CALL CPU_TIME(t1)
+MASTER CALL CPU_TIME(t1)
 TIMELOOP: DO it=itmin+1,itmax+1
-          ! CALL HIT_alvelius_forcing_update
 RK_LOOP:  DO n_k=1,rk_steps
           PRINT *,'_________________________________________________________'
           PRINT *,'it , ik =',it,n_k
@@ -60,12 +64,12 @@ RK_LOOP:  DO n_k=1,rk_steps
           CALL TA_linear
 
           !! Write the velocity field every it_out time steps
-          IF (MOD(it-1,it_out)==0 .AND. n_k==1) CALL IO_write_velocity_field(it)
+          ! IF (MOD(it-1,it_out)==0 .AND. n_k==1) CALL IO_write_velocity_field(it)
 
 ENDDO RK_LOOP
           ! dt=dt_new
 ENDDO TIMELOOP
-CALL CPU_TIME(t2)
+MASTER CALL CPU_TIME(t2)
 PRINT *,'Computation time:', t2- t1
 !=======================================================================
 END PROGRAM dns_grid

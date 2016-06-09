@@ -201,15 +201,15 @@ SUBROUTINE TA_nonlinear
    CALL STATS_compute_CFL
 
    ! CALL HIT_linear_forcing
-   if (proc_id==0) then
-         if (it==3) then
-                do xx=1,nxp
-                write(18,*) uu(xx,1,1,1),uu(xx,1,1,2),uu(xx,1,1,3)
-                enddo
-                CALL_BARRIER
-                  stop
-          endif
-   endif
+   ! if (proc_id==0) then
+   !       if (it==3) then
+   !              do xx=1,nxp
+   !              write(18,*) uu(xx,1,1,1),uu(xx,1,1,2),uu(xx,1,1,3)
+   !              enddo
+   !              CALL_BARRIER
+   !                stop
+   !        endif
+   ! endif
    ! CALL F_FFT(hh,hh_C)
    ! CALL F_FFT(uu,uu_C)
    CALL_BARRIER

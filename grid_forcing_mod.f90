@@ -52,7 +52,7 @@ SUBROUTINE GRID_forcing_init
  !        ENDDO YL100
  !        ENDDO ZL100
  ! ENDIF
-
+!! TODO proc0 calls the random number generator and broadcasts the random numbers
  ZL100: DO zn=1,nzp,nzp/nc
  YL100: DO yn=1,nyp,nyp/nc
         !fills the grid nodes (nodes with assigned forcing value)

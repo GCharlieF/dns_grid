@@ -43,7 +43,7 @@ SUBROUTINE STATS_compute_CFL
   PRINT *,'v max  ::',v_max
   PRINT *,'w max  ::',w_max
   PRINT *,'- - - - - - - - - - - - - - - - - - - - - - - - -'
-  IF (CFL > 3.0)  STOP
+  ! IF (CFL > 3.0)  STOP
 END SUBROUTINE STATS_compute_CFL
 !!! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
