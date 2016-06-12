@@ -10,7 +10,7 @@
 64                  ::nz
 64                 ::Re 120 200
 0                   ::it min
-10               ::it max
+1000               ::it max
 50000                 ::it out
 20                  ::it stat
 0.005               ::dt

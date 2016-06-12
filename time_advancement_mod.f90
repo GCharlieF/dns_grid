@@ -224,7 +224,7 @@ SUBROUTINE TA_nonlinear
     !       write(18,*) real(uu_C(:,1,1,:))
     !       stop
     ! endif
-
+!! FIXME it works only for 1D slicing
 if (yc_loc(1)==1) then
 hh_C(5,1,1,1)=hh_C(5,1,1,1)+CMPLX(0_rk,0_rk)
 hh_C(5,1,1,2)=hh_C(5,1,1,2)+CMPLX(0_rk,-0.5_rk)

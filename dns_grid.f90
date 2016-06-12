@@ -1,13 +1,14 @@
 !=======================================================================
-!! TODO Parrallel IO
-!! TODO Parallel grid_forcing (check random number generation)
-!! TODO change x_loc,y_loc,z_loc in something more readable (preprocessor?)
 !! TODO Clean,comment and explain
-!! TODO Alvelious?
-!! TODO way to avoid first r2c transform in MPI_initialize
+!! TODO Parallel grid_forcing (check random number generation)
 !! TODO MPI communication for statistics
-!! TODO remove fft_mod
+!! TODO Parrallel IO
 !! TODO De-aliasing
+!! TODO remove fft_mod
+!! TODO way to avoid first r2c transform in MPI_initialize
+!! TODO change x_loc,y_loc,z_loc in something more readable (preprocessor?)
+!! TODO PPRINT statement for text and numbers
+!! TODO Alvelious?
 !=======================================================================
 PROGRAM dns_grid
 USE parameters_mod                                !! PAR

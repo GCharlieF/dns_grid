@@ -235,3 +235,38 @@ ENDDO ZL21
 END SUBROUTINE HIT_alvelius_forcing
 !!! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 END MODULE hit_forcings_mod
+
+
+
+! if (yc_loc(1)==1) then
+! hh_C(5,1,1,1)=hh_C(5,1,1,1)+CMPLX(0_rk,0_rk)
+! hh_C(5,1,1,2)=hh_C(5,1,1,2)+CMPLX(0_rk,-0.5_rk)
+! hh_C(5,1,1,3)=hh_C(5,1,1,3)+CMPLX(0.5_rk,0_rk)
+! endif
+!
+! if (yc_loc(1)==1) then
+! hh_C(1,5,1,1)=hh_C(1,5,1,1)+CMPLX(0.5_rk,0_rk)
+! hh_C(1,5,1,2)=hh_C(1,5,1,2)+CMPLX(0_rk,0_rk)
+! hh_C(1,5,1,3)=hh_C(1,5,1,3)+CMPLX(0_rk,-0.5_rk)
+! endif
+!
+! if (yc_loc(Csize(2)-5+2)==ny-5+2) then
+! hh_C(1,Csize(2)-5+2,1,1)=hh_C(1,Csize(2)-5+2,1,1)+CMPLX(0.5_rk,0_rk)
+! hh_C(1,Csize(2)-5+2,1,2)=hh_C(1,Csize(2)-5+2,1,2)+CMPLX(0_rk,0_rk)
+! hh_C(1,Csize(2)-5+2,1,3)=hh_C(1,Csize(2)-5+2,1,3)+CMPLX(0_rk,0.5_rk)
+! endif
+!
+! if (yc_loc(1)==1) then
+! if (zc_loc(1)==1) then
+! hh_C(1,1,5,1)=hh_C(1,1,5,1)+CMPLX(0_rk,-0.5_rk)
+! hh_C(1,1,5,2)=hh_C(1,1,5,2)+CMPLX(0.5_rk,0_rk)
+! hh_C(1,1,5,3)=hh_C(1,1,5,3)+CMPLX(0_rk,0_rk)
+! endif
+!
+! if (zc_loc(Csize(3)-5+2)==nz-5+2) then
+!
+! hh_C(1,1,Csize(3)-5+2,1)=hh_C(1,1,Csize(3)-5+2,1)+CMPLX(0_rk,0.5_rk)
+! hh_C(1,1,Csize(3)-5+2,2)=hh_C(1,1,Csize(3)-5+2,2)+CMPLX(0.5_rk,0_rk)
+! hh_C(1,1,Csize(3)-5+2,3)=hh_C(1,1,Csize(3)-5+2,3)+CMPLX(0_rk,0_rk)
+! endif
+! endif
