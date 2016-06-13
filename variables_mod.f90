@@ -5,7 +5,7 @@ MODULE variables_mod
 
 USE parameters_mod
 IMPLICIT NONE
-
+#INCLUDE 'fpp_macros.h'
 !!Grid forcing variables
 INTEGER(KIND=ik)                               :: nc
 INTEGER(KIND=ik)                               :: dt_forc
@@ -56,8 +56,9 @@ CHARACTER(LEN=10)                             :: file_bin
 
  CONTAINS
 !.......................................................................
-SUBROUTINE VAR_read_input_parameters
+SUBROUTINE VAR_read_input_parameters(proc_id)
 !!read case parameters and allocates all the variables
+INTEGER(KIND=ik)                          :: proc_id
 OPEN(unit=1,file='sim_par.dat',status='unknown')
        READ(1,*)  ver
        READ(1,*)  file_bin
@@ -97,7 +98,7 @@ nxp=nx+al*nx/2 ; nyp=ny+al*ny/2 ; nzp=nz+al*nz/2
 
 dt_forc=int(t_forz/dt,KIND=ik)
 it_wrt=itmin+it_out
-
+ MASTER THEN
  write(*,*) 'initial parameters'
  write(*,*) 'xl,yl,zl: ',xl,yl,zl
  write(*,*) 'Fourier modes: ',nx,ny,nz
@@ -113,7 +114,7 @@ it_wrt=itmin+it_out
  write(*,*) 'n_celle', nc
  write(*,*) 'thcik and aa', thick,aa
         !  write(*,*) 'i_couple',i_couple
-
+ENDIF
 END SUBROUTINE VAR_read_input_parameters
 
 !!!. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .

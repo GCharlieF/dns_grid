@@ -10,9 +10,9 @@
 64                  ::nz
 64                 ::Re 120 200
 0                   ::it min
-1000               ::it max
+3              ::it max
 50000                 ::it out
-20                  ::it stat
+1                  ::it stat
 0.005               ::dt
 3                   ::RK order
 3.8                 ::forcing amplitude (3.8 grid forcing) or KE0 (linear forcing)

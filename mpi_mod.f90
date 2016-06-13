@@ -56,7 +56,9 @@ SUBROUTINE MPI_initialize
       CALL MPI_Bcast(nxp,1, MPI_INTEGER,0,mpi_comm_world,ierr)
       CALL MPI_Bcast(nyp,1, MPI_INTEGER,0,mpi_comm_world,ierr)
       CALL MPI_Bcast(nzp,1, MPI_INTEGER,0,mpi_comm_world,ierr)
-
+END SUBROUTINE MPI_initialize
+!!!. . . . . . . . . . . MPI INITIALIZE . . . . . . . . . . . . . . . . . . . .
+SUBROUTINE MPI_P3DFFT_initialize
 !! Sets P3DFFT decomposition to 1D (2D not yet implemented)
       dims(1) = 1
       dims(2) = n_proc
@@ -112,7 +114,7 @@ SUBROUTINE MPI_initialize
 !! FIXME remove when IO is implemented
                            uu_C=cmplx(0.,0.)
                            hh_C=cmplx(0.,0.)
-END SUBROUTINE MPI_initialize
+END SUBROUTINE MPI_P3DFFT_initialize
 !!! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
 

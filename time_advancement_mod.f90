@@ -78,16 +78,16 @@ INTEGER(KIND=ik)                             :: zz,yy,xx,jj,kk
  ENDDO YL10
  ENDDO ZL10
 
- print *,'prhs',puu_C(7,12,12,1)
- print *,'prhs',uu_C(7,12,12,1)
+ MASTER PRINT *,'prhs',puu_C(7,12,12,1)
+ MASTER PRINT *,'prhs',uu_C(7,12,12,1)
  xx=7
  yy=12
  zz=12
  jj=day(yy)
  kk=daz(zz)
  k_quad=(kx(xc_loc(xx))**2+ky(yc_loc(yy))**2+kz(zc_loc(zz))**2)
- print *,pnrk,k_quad,ark(n_k,rk_steps),brk(n_k,rk_steps)
- print *,pnrk+k_quad,qnrk*hh_C(xx,yy,zz,1)
+ MASTER PRINT *,pnrk,k_quad,ark(n_k,rk_steps),brk(n_k,rk_steps)
+ MASTER PRINT *,pnrk+k_quad,qnrk*hh_C(xx,yy,zz,1)
 END SUBROUTINE TA_partial_right_hand_side
 
 !! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -132,8 +132,8 @@ SUBROUTINE TA_nonlinear
 
     ! CALL B_FFT(hh_C,hh)
     ! CALL B_FFT(uu_C,uu)
-     print *,'fft',uu_C(7,12,12,1)
-     print *,'fft',hh_C(7,12,12,1)
+     MASTER PRINT *,'fft',uu_C(7,12,12,1)
+     MASTER PRINT *,'fft',hh_C(7,12,12,1)
 
     CALL_BARRIER
 
@@ -143,8 +143,8 @@ SUBROUTINE TA_nonlinear
                 Rsize(1)*Rsize(2)*Rsize(3),3,'tff')
 
     CALL_BARRIER
-    print *,'u ta   ::',uu(4,4,4,1)
-    print *,'hh ta  ::',hh(4,4,4,1)
+    MASTER PRINT *,'u ta   ::',uu(4,4,4,1)
+    MASTER PRINT *,'hh ta  ::',hh(4,4,4,1)
 
     CALL STATS_average_energy(stats_time)
       !   DO zz=1,nzp
@@ -315,7 +315,7 @@ endif
  ENDDO ZL30
       ! CALL TA_divfree(hh_C)
       ! CALL HIT_alvelius_forcing
- print *,'prima di lin',hh_C(7,12,12,1)
+ MASTER PRINT *,'prima di lin',hh_C(7,12,12,1)
 END SUBROUTINE TA_nonlinear
 
 !! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -344,8 +344,8 @@ SUBROUTINE TA_linear
  ENDDO XL10
  ENDDO YL10
  ENDDO ZL10
-  print *,'linear',puu_C(7,12,12,1)
- print *,'linear',uu_C(7,12,12,1)
+  MASTER PRINT *,'linear',puu_C(7,12,12,1)
+ MASTER PRINT *,'linear',uu_C(7,12,12,1)
 END SUBROUTINE TA_linear
 !! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 !! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .

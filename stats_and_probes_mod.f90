@@ -10,8 +10,10 @@ MODULE stats_and_probes_mod
  USE grid_forcing_mod
 
 IMPLICIT NONE
+#INCLUDE 'fpp_macros.h'
  REAL(KIND=rk)                           :: KE
  REAL(KIND=rk),DIMENSION(3)              :: KE_ii
+ REAL(KIND=rk)                           :: CFL
  REAL(KIND=rk)                           :: diss
  REAL(KIND=rk)                           :: dt_new
  LOGICAL                                 :: stats_time
@@ -23,7 +25,7 @@ SUBROUTINE STATS_compute_CFL
  IMPLICIT NONE
  REAL(KIND=rk)                         :: u_max,v_max,w_max
  REAL(KIND=rk)                         :: dx,dy,dz
- REAL(KIND=rk)                         :: CFL
+ REAL(KIND=rk)                         :: CFL_loc
  REAL(KIND=rk)                         :: CFL_max
 
   CFL_max=0.15
@@ -34,15 +36,21 @@ SUBROUTINE STATS_compute_CFL
   dx=xl/REAL(nxp,KIND=rk)
   dy=yl/REAL(nyp,KIND=rk)
   dz=zl/REAL(nzp,KIND=rk)
-  CFL = u_max*(dt/dx)+v_max*(dt/dy)+w_max*(dt/dz)
-  CFL = CFL*pi
+  CFL_loc = u_max*(dt/dx)+v_max*(dt/dy)+w_max*(dt/dz)
+  CFL_loc = CFL_loc*pi
+!! FIXME check se la u_max locale va bene o se bisogna broadcastarla
+
+  CALL MPI_REDUCE(CFL_loc, CFL, 1, MPI_DOUBLE_PRECISION, MPI_SUM, 0, mpi_comm_world,ierr)
+!! FIXME dt_new sees the global maxima
   dt_new=CFL_max/(u_max/dx+v_max/dy+w_max/dz)/pi
-  PRINT *,'- - - - - - - -(compute cfl) - - - - - - - - - -'
-  PRINT *,'CFL    ::',CFL
-  PRINT *,'u max  ::',u_max
-  PRINT *,'v max  ::',v_max
-  PRINT *,'w max  ::',w_max
-  PRINT *,'- - - - - - - - - - - - - - - - - - - - - - - - -'
+
+
+  MASTER PRINT *,'- - - - - - - -(compute cfl) - - - - - - - - - -'
+  MASTER PRINT *,'CFL    ::',CFL
+  MASTER PRINT *,'u max  ::',u_max
+  MASTER PRINT *,'v max  ::',v_max
+  MASTER PRINT *,'w max  ::',w_max
+  MASTER PRINT *,'- - - - - - - - - - - - - - - - - - - - - - - - -'
   ! IF (CFL > 3.0)  STOP
 END SUBROUTINE STATS_compute_CFL
 !!! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -52,29 +60,38 @@ SUBROUTINE STATS_average_energy(compute_stats)
 
 IMPLICIT NONE
  INTEGER(KIND=ik)                        :: xx,yy,zz,ii
+ REAL(KIND=rk)                           :: KE_loc
+ REAL(KIND=rk),DIMENSION(3)              :: KE_ii_loc
  LOGICAL                                 :: compute_stats
  IF (compute_stats) THEN
  ZL10 :DO zz=1,Rsize(3)
  YL10 :DO yy=1,Rsize(2)
  XL10 :DO xx=1,Rsize(1)
        DO ii=1,3
-       KE=KE+0.5_rk*uu(xx,yy,zz,ii)**2
-       KE_ii(ii)=KE_ii(ii)+0.5_rk*uu(xx,yy,zz,ii)**2
+       KE_loc=KE_loc+0.5_rk*uu(xx,yy,zz,ii)**2
+       KE_ii_loc(ii)=KE_ii_loc(ii)+0.5_rk*uu(xx,yy,zz,ii)**2
        ENDDO
  ENDDO XL10
  ENDDO YL10
  ENDDO ZL10
- KE=KE/REAL(nxp*nyp*nzp,KIND=rk)
- KE_ii=KE_ii/REAL(nxp*nyp*nzp,KIND=rk)
- PRINT *,'- - - - - - - -(average energy) - - - - - - - - - -'
+ KE_loc=KE_loc/REAL(nxp*nyp*nzp,KIND=rk)
+ KE_ii_loc=KE_ii_loc/REAL(nxp*nyp*nzp,KIND=rk)
 
- PRINT *,'KE     ::',KE
- PRINT *,'u^2/2  ::',KE_ii(1)
- PRINT *,'v^2/2  ::',KE_ii(2)
- PRINT *,'w^2/2  ::',KE_ii(3)
- PRINT *,'- - - - - - - - - - - - - - - - - - - - - - - - - -'
- ENDIF
+ CALL MPI_REDUCE(KE_loc, KE, 1, MPI_DOUBLE_PRECISION, MPI_SUM, 0, mpi_comm_world,ierr)
+ CALL MPI_REDUCE(KE_ii_loc(1), KE_ii(1), 1, MPI_DOUBLE_PRECISION, MPI_SUM, 0, mpi_comm_world,ierr)
+ CALL MPI_REDUCE(KE_ii_loc(2), KE_ii(2), 1, MPI_DOUBLE_PRECISION, MPI_SUM, 0, mpi_comm_world,ierr)
+ CALL MPI_REDUCE(KE_ii_loc(3), KE_ii(3), 1, MPI_DOUBLE_PRECISION, MPI_SUM, 0, mpi_comm_world,ierr)
 
+
+ MASTER PRINT *,'- - - - - - - -(average energy) - - - - - - - - - -'
+
+ MASTER PRINT *,'KE     ::',KE,KE_loc
+ MASTER PRINT *,'u^2/2  ::',KE_ii(1)
+ MASTER PRINT *,'v^2/2  ::',KE_ii(2)
+ MASTER PRINT *,'w^2/2  ::',KE_ii(3)
+ MASTER PRINT *,'- - - - - - - - - - - - - - - - - - - - - - - - - -'
+
+ENDIF
 !! Stats output
 IF (compute_stats) THEN
   WRITE(21,2)t,KE,KE_ii(1),KE_ii(2),KE_ii(3)

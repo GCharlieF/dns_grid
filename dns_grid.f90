@@ -9,6 +9,7 @@
 !! TODO change x_loc,y_loc,z_loc in something more readable (preprocessor?)
 !! TODO PPRINT statement for text and numbers
 !! TODO Alvelious?
+!! TODO Deallocate and free memory
 !=======================================================================
 PROGRAM dns_grid
 USE parameters_mod                                !! PAR
@@ -28,8 +29,9 @@ INTEGER :: mm
 !!=======================================================================
 
 !! Reads case variables and allocates the arrays
-CALL VAR_read_input_parameters
 CALL MPI_initialize
+CALL VAR_read_input_parameters(proc_id)
+CALL MPI_P3DFFT_initialize
 CALL VAR_memory_initialization
 CALL VAR_wave_numbers
 ! CALL IO_read_field
@@ -43,11 +45,11 @@ CALL_BARRIER
 MASTER CALL CPU_TIME(t1)
 TIMELOOP: DO it=itmin+1,itmax+1
 RK_LOOP:  DO n_k=1,rk_steps
-          PRINT *,'_________________________________________________________'
-          PRINT *,'it , ik =',it,n_k
-          PRINT *,'          '
-          PRINT *,'dt, t >>>>>>>>>>',dt,t
-          PRINT *,'          '
+          MASTER PRINT *,'_________________________________________________________'
+          MASTER PRINT *,'it , ik =',it,n_k
+          MASTER PRINT *,'          '
+          MASTER PRINT *,'dt, t >>>>>>>>>>',dt,t
+          MASTER PRINT *,'          '
 
           t=t+dt/REAL(rk_steps,KIND=rk)
 
@@ -71,7 +73,8 @@ ENDDO RK_LOOP
           ! dt=dt_new
 ENDDO TIMELOOP
 MASTER CALL CPU_TIME(t2)
-PRINT *,'Computation time:', t2- t1
+MASTER PRINT *,'Computation time:', t2- t1
+    CALL MPI_FINALIZE(ierr)
 !=======================================================================
 END PROGRAM dns_grid
 !=======================================================================
