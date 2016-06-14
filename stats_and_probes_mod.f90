@@ -24,23 +24,27 @@ CONTAINS
 SUBROUTINE STATS_compute_CFL
  IMPLICIT NONE
  REAL(KIND=rk)                         :: u_max,v_max,w_max
+ REAL(KIND=rk)                         :: u_max_loc,v_max_loc,w_max_loc
  REAL(KIND=rk)                         :: dx,dy,dz
- REAL(KIND=rk)                         :: CFL_loc
  REAL(KIND=rk)                         :: CFL_max
 
   CFL_max=0.15
-  u_max=maxval(uu(:,:,:,1))
-  v_max=maxval(uu(:,:,:,2))
-  w_max=maxval(uu(:,:,:,3))
+  u_max_loc=maxval(uu(:,:,:,1))
+  v_max_loc=maxval(uu(:,:,:,2))
+  w_max_loc=maxval(uu(:,:,:,3))
 
   dx=xl/REAL(nxp,KIND=rk)
   dy=yl/REAL(nyp,KIND=rk)
   dz=zl/REAL(nzp,KIND=rk)
-  CFL_loc = u_max*(dt/dx)+v_max*(dt/dy)+w_max*(dt/dz)
-  CFL_loc = CFL_loc*pi
+  CALL MPI_ALLREDUCE(u_max_loc,u_max, 1, MPI_DOUBLE_PRECISION, MPI_MAX,mpi_comm_world,ierr)
+  CALL MPI_ALLREDUCE(v_max_loc,v_max, 1, MPI_DOUBLE_PRECISION, MPI_MAX,mpi_comm_world,ierr)
+  CALL MPI_ALLREDUCE(w_max_loc,w_max, 1, MPI_DOUBLE_PRECISION, MPI_MAX,mpi_comm_world,ierr)
+
+  CFL = u_max*(dt/dx)+v_max*(dt/dy)+w_max*(dt/dz)
+  CFL = CFL*pi
 !! FIXME check se la u_max locale va bene o se bisogna broadcastarla
 
-  CALL MPI_REDUCE(CFL_loc, CFL, 1, MPI_DOUBLE_PRECISION, MPI_SUM, 0, mpi_comm_world,ierr)
+  ! CALL MPI_REDUCE(CFL_loc, CFL, 1, MPI_DOUBLE_PRECISION, MPI_SUM, 0, mpi_comm_world,ierr)
 !! FIXME dt_new sees the global maxima
   dt_new=CFL_max/(u_max/dx+v_max/dy+w_max/dz)/pi
 
@@ -64,6 +68,10 @@ IMPLICIT NONE
  REAL(KIND=rk),DIMENSION(3)              :: KE_ii_loc
  LOGICAL                                 :: compute_stats
  IF (compute_stats) THEN
+ KE_loc=0.
+ KE_ii_loc=0.
+ MASTER KE=0.
+ MASTER KE_ii=0.
  ZL10 :DO zz=1,Rsize(3)
  YL10 :DO yy=1,Rsize(2)
  XL10 :DO xx=1,Rsize(1)
@@ -77,10 +85,10 @@ IMPLICIT NONE
  KE_loc=KE_loc/REAL(nxp*nyp*nzp,KIND=rk)
  KE_ii_loc=KE_ii_loc/REAL(nxp*nyp*nzp,KIND=rk)
 
- CALL MPI_REDUCE(KE_loc, KE, 1, MPI_DOUBLE_PRECISION, MPI_SUM, 0, mpi_comm_world,ierr)
- CALL MPI_REDUCE(KE_ii_loc(1), KE_ii(1), 1, MPI_DOUBLE_PRECISION, MPI_SUM, 0, mpi_comm_world,ierr)
- CALL MPI_REDUCE(KE_ii_loc(2), KE_ii(2), 1, MPI_DOUBLE_PRECISION, MPI_SUM, 0, mpi_comm_world,ierr)
- CALL MPI_REDUCE(KE_ii_loc(3), KE_ii(3), 1, MPI_DOUBLE_PRECISION, MPI_SUM, 0, mpi_comm_world,ierr)
+ CALL MPI_ALLREDUCE(KE_loc, KE, 1, MPI_DOUBLE_PRECISION, MPI_SUM, mpi_comm_world,ierr)
+ CALL MPI_ALLREDUCE(KE_ii_loc(1), KE_ii(1), 1, MPI_DOUBLE_PRECISION, MPI_SUM, mpi_comm_world,ierr)
+ CALL MPI_ALLREDUCE(KE_ii_loc(2), KE_ii(2), 1, MPI_DOUBLE_PRECISION, MPI_SUM, mpi_comm_world,ierr)
+ CALL MPI_ALLREDUCE(KE_ii_loc(3), KE_ii(3), 1, MPI_DOUBLE_PRECISION, MPI_SUM, mpi_comm_world,ierr)
 
 
  MASTER PRINT *,'- - - - - - - -(average energy) - - - - - - - - - -'
@@ -94,7 +102,7 @@ IMPLICIT NONE
 ENDIF
 !! Stats output
 IF (compute_stats) THEN
-  WRITE(21,2)t,KE,KE_ii(1),KE_ii(2),KE_ii(3)
+  MASTER WRITE(21,2)t,KE,KE_ii(1),KE_ii(2),KE_ii(3)
 ENDIF
 2 FORMAT(5(e15.6,1x))
 

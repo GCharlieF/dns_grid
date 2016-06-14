@@ -106,7 +106,7 @@ SUBROUTINE MPI_P3DFFT_initialize
 
       CALL_BARRIER
 !!    p3dfft seems to require that first transform is r2c, if removed it tries
-!!    to re-allocate variables during first c2r transform
+!!    to re-allocate variables during first c2r transform rising an error
       CALL p3dfft_ftran_r2c_many (uu,Rsize(1)*Rsize(2)*Rsize(3),uu_C, &
                            Csize(1)*Csize(2)*Csize(3),3,'fft')
       CALL p3dfft_ftran_r2c_many (hh,Rsize(1)*Rsize(2)*Rsize(3),hh_C, &
@@ -116,7 +116,10 @@ SUBROUTINE MPI_P3DFFT_initialize
                            hh_C=cmplx(0.,0.)
 END SUBROUTINE MPI_P3DFFT_initialize
 !!! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-
+SUBROUTINE MPI_abort   
+CALL MPI_FINALIZE(ierr)
+STOP
+END SUBROUTINE MPI_abort
 
 !!! . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 END MODULE MPI_mod

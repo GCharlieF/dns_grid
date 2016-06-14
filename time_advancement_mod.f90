@@ -103,6 +103,7 @@ SUBROUTINE TA_nonlinear
  COMPLEX(KIND=rk)               :: k_quad
  COMPLEX(KIND=rk)               :: ac1,ac2,ac3,div
  REAL(KIND=rk)                  :: norm,ff1,ff2,ff3
+ REAL(KIND=rk)                  :: ff1_glob,ff2_glob,ff3_glob
  REAL(KIND=rk)                  :: a1,a2,a3,b1,b2,b3
  REAL(KIND=rk)                  :: xf_min,xf_max,delta_xf
  REAL(KIND=rk)                  :: coeff,amp_x
@@ -179,24 +180,29 @@ SUBROUTINE TA_nonlinear
 
         !! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         !! Forcing input in the physical space for the grid forcing
-      !    IF (REAL(xr_loc(xx),KIND=rk) > xf_min-nxp/8 .AND. REAL(xr_loc(xx),KIND=rk) < xf_max +nxp/8) THEN
-         !
+         IF (REAL(xr_loc(xx),KIND=rk) > xf_min-nxp/8 .AND. REAL(xr_loc(xx),KIND=rk) < xf_max +nxp/8) THEN
+
       !    amp_x=coeff*EXP(- (REAL(xr_loc(xx)-nxp/2,KIND=rk)*xl/REAL(nxp,KIND=rk) )**2/sigma)
-      !    amp_x=0.5*(1 + TANH(aa*(delta_xf-abs(REAL(nxp/2-xr_loc(xx),KIND=rk))*xl/REAL(nxp,KIND=rk) )))
-         !
-      !    hh(xx,yy,zz,1)=hh(xx,yy,zz,1) + fu(yr_loc(yy),zr_loc(zz))*amp_x
-      !    hh(xx,yy,zz,2)=hh(xx,yy,zz,2) + fv(yr_loc(yy),zr_loc(zz))*amp_x
-      !    hh(xx,yy,zz,3)=hh(xx,yy,zz,3) + fw(yr_loc(yy),zr_loc(zz))*amp_x
-      !    ff1=ff1+(fu(yr_loc(yy),zr_loc(zz))*amp_x)**2/REAL(nxp*nyp*nzp,KIND=rk)
-      !    ff2=ff2+(fv(yr_loc(yy),zr_loc(zz))*amp_x)**2/REAL(nxp*nyp*nzp,KIND=rk)
-      !    ff3=ff3+(fw(yr_loc(yy),zr_loc(zz))*amp_x)**2/REAL(nxp*nyp*nzp,KIND=rk)
-      !    ENDIF
+         amp_x=0.5*(1 + TANH(aa*(delta_xf-abs(REAL(nxp/2-xr_loc(xx),KIND=rk))*xl/REAL(nxp,KIND=rk) )))
+
+         hh(xx,yy,zz,1)=hh(xx,yy,zz,1) + fu(yr_loc(yy),zr_loc(zz))*amp_x
+         hh(xx,yy,zz,2)=hh(xx,yy,zz,2) + fv(yr_loc(yy),zr_loc(zz))*amp_x
+         hh(xx,yy,zz,3)=hh(xx,yy,zz,3) + fw(yr_loc(yy),zr_loc(zz))*amp_x
+         ff1=ff1+(fu(yr_loc(yy),zr_loc(zz))*amp_x)**2/REAL(nxp*nyp*nzp,KIND=rk)
+         ff2=ff2+(fv(yr_loc(yy),zr_loc(zz))*amp_x)**2/REAL(nxp*nyp*nzp,KIND=rk)
+         ff3=ff3+(fw(yr_loc(yy),zr_loc(zz))*amp_x)**2/REAL(nxp*nyp*nzp,KIND=rk)
+         ENDIF
          !! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
   ENDDO XL20
   ENDDO YL20
   ENDDO ZL20
-      !    print *,'ff',ff1,ff2,ff3,hh(nxp/2,nyp/2,nzp/2,1)
+
+
+      CALL MPI_REDUCE(ff1, ff1_glob, 1, MPI_DOUBLE_PRECISION, MPI_SUM, 0, mpi_comm_world,ierr)
+      CALL MPI_REDUCE(ff2, ff2_glob, 1, MPI_DOUBLE_PRECISION, MPI_SUM, 0, mpi_comm_world,ierr)
+      CALL MPI_REDUCE(ff3, ff3_glob, 1, MPI_DOUBLE_PRECISION, MPI_SUM, 0, mpi_comm_world,ierr)
+         print *,'ff',ff1_glob,ff2_glob,ff3_glob,hh(nxp/2,nyp/2,nzp/2,1)
 
    CALL STATS_compute_CFL
 
@@ -225,38 +231,40 @@ SUBROUTINE TA_nonlinear
     !       stop
     ! endif
 !! FIXME it works only for 1D slicing
-if (yc_loc(1)==1) then
-hh_C(5,1,1,1)=hh_C(5,1,1,1)+CMPLX(0_rk,0_rk)
-hh_C(5,1,1,2)=hh_C(5,1,1,2)+CMPLX(0_rk,-0.5_rk)
-hh_C(5,1,1,3)=hh_C(5,1,1,3)+CMPLX(0.5_rk,0_rk)
-endif
-
-if (yc_loc(1)==1) then
-hh_C(1,5,1,1)=hh_C(1,5,1,1)+CMPLX(0.5_rk,0_rk)
-hh_C(1,5,1,2)=hh_C(1,5,1,2)+CMPLX(0_rk,0_rk)
-hh_C(1,5,1,3)=hh_C(1,5,1,3)+CMPLX(0_rk,-0.5_rk)
-endif
-
-if (yc_loc(Csize(2)-5+2)==ny-5+2) then
-hh_C(1,Csize(2)-5+2,1,1)=hh_C(1,Csize(2)-5+2,1,1)+CMPLX(0.5_rk,0_rk)
-hh_C(1,Csize(2)-5+2,1,2)=hh_C(1,Csize(2)-5+2,1,2)+CMPLX(0_rk,0_rk)
-hh_C(1,Csize(2)-5+2,1,3)=hh_C(1,Csize(2)-5+2,1,3)+CMPLX(0_rk,0.5_rk)
-endif
-
-if (yc_loc(1)==1) then
-if (zc_loc(1)==1) then
-hh_C(1,1,5,1)=hh_C(1,1,5,1)+CMPLX(0_rk,-0.5_rk)
-hh_C(1,1,5,2)=hh_C(1,1,5,2)+CMPLX(0.5_rk,0_rk)
-hh_C(1,1,5,3)=hh_C(1,1,5,3)+CMPLX(0_rk,0_rk)
-endif
-
-if (zc_loc(Csize(3)-5+2)==nz-5+2) then
-
-hh_C(1,1,Csize(3)-5+2,1)=hh_C(1,1,Csize(3)-5+2,1)+CMPLX(0_rk,0.5_rk)
-hh_C(1,1,Csize(3)-5+2,2)=hh_C(1,1,Csize(3)-5+2,2)+CMPLX(0.5_rk,0_rk)
-hh_C(1,1,Csize(3)-5+2,3)=hh_C(1,1,Csize(3)-5+2,3)+CMPLX(0_rk,0_rk)
-endif
-endif
+!!!=============================================================================
+! if (yc_loc(1)==1) then
+! hh_C(5,1,1,1)=hh_C(5,1,1,1)+CMPLX(0_rk,0_rk)
+! hh_C(5,1,1,2)=hh_C(5,1,1,2)+CMPLX(0_rk,-0.5_rk)
+! hh_C(5,1,1,3)=hh_C(5,1,1,3)+CMPLX(0.5_rk,0_rk)
+! endif
+!
+! if (yc_loc(1)==1) then
+! hh_C(1,5,1,1)=hh_C(1,5,1,1)+CMPLX(0.5_rk,0_rk)
+! hh_C(1,5,1,2)=hh_C(1,5,1,2)+CMPLX(0_rk,0_rk)
+! hh_C(1,5,1,3)=hh_C(1,5,1,3)+CMPLX(0_rk,-0.5_rk)
+! endif
+!
+! if (yc_loc(Csize(2)-5+2)==ny-5+2) then
+! hh_C(1,Csize(2)-5+2,1,1)=hh_C(1,Csize(2)-5+2,1,1)+CMPLX(0.5_rk,0_rk)
+! hh_C(1,Csize(2)-5+2,1,2)=hh_C(1,Csize(2)-5+2,1,2)+CMPLX(0_rk,0_rk)
+! hh_C(1,Csize(2)-5+2,1,3)=hh_C(1,Csize(2)-5+2,1,3)+CMPLX(0_rk,0.5_rk)
+! endif
+!
+! if (yc_loc(1)==1) then
+! if (zc_loc(1)==1) then
+! hh_C(1,1,5,1)=hh_C(1,1,5,1)+CMPLX(0_rk,-0.5_rk)
+! hh_C(1,1,5,2)=hh_C(1,1,5,2)+CMPLX(0.5_rk,0_rk)
+! hh_C(1,1,5,3)=hh_C(1,1,5,3)+CMPLX(0_rk,0_rk)
+! endif
+!
+! if (zc_loc(Csize(3)-5+2)==nz-5+2) then
+!
+! hh_C(1,1,Csize(3)-5+2,1)=hh_C(1,1,Csize(3)-5+2,1)+CMPLX(0_rk,0.5_rk)
+! hh_C(1,1,Csize(3)-5+2,2)=hh_C(1,1,Csize(3)-5+2,2)+CMPLX(0.5_rk,0_rk)
+! hh_C(1,1,Csize(3)-5+2,3)=hh_C(1,1,Csize(3)-5+2,3)+CMPLX(0_rk,0_rk)
+! endif
+! endif
+!!!=============================================================================
 
 ! hh_C(4,4,4,2)=hh_C(4,4,4,2)+CMPLX(1_rk,1_rk)
 ! hh_C(4,4,4,3)=hh_C(4,4,4,3)+CMPLX(1_rk,1_rk)

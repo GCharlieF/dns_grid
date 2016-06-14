@@ -9,6 +9,7 @@ USE variables_mod
 USE MPI_mod
 implicit none
 #INCLUDE 'fpp_macros.h'   !!#INCLUDE fpp macros
+INTEGER(KIND=ik)                         :: RSS
 CONTAINS
 
 !!!. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -29,10 +30,12 @@ SUBROUTINE GRID_forcing_init
  dz=REAL(nc,KIND=rk)/REAL(nzp,KIND=rk)
 
 !!TODO fix seeding
-            call random_seed(put=[seed(1),seed(1)])
+! RSS=2
+! MASTER CALL random_seed(size=RSS)
+! MASTER CALL random_seed(put=[seed(1),seed(1)])
 
  !forcing startup (sets first couple f_prev/f_next)
- IF (it==0) THEN
+IF (it==0) THEN
  ! ZL100: DO zn=1,nzp,nzp/nc
  ! YL100: DO yn=1,nyp,nyp/nc
  !        !fills the grid nodes (nodes with assigned forcing value)
@@ -53,6 +56,7 @@ SUBROUTINE GRID_forcing_init
  !        ENDDO ZL100
  ! ENDIF
 !! TODO proc0 calls the random number generator and broadcasts the random numbers
+ IF (proc_id==0) THEN
  ZL100: DO zn=1,nzp,nzp/nc
  YL100: DO yn=1,nyp,nyp/nc
         !fills the grid nodes (nodes with assigned forcing value)
@@ -65,6 +69,8 @@ SUBROUTINE GRID_forcing_init
         fw_prev(yn,zn)=f_amp*(w_rand*2_rk - 1_rk)
         ENDDO YL100
         ENDDO ZL100
+
+
 
 
   ZL101: DO zn=1,nzp,nzp/nc
@@ -81,6 +87,16 @@ SUBROUTINE GRID_forcing_init
      ENDDO ZL101
   ENDIF
 
+
+  CALL MPI_Bcast(fu_prev,nyp*nzp, MPI_DOUBLE_PRECISION,0,mpi_comm_world,ierr)
+  CALL MPI_Bcast(fv_prev,nyp*nzp, MPI_DOUBLE_PRECISION,0,mpi_comm_world,ierr)
+  CALL MPI_Bcast(fw_prev,nyp*nzp, MPI_DOUBLE_PRECISION,0,mpi_comm_world,ierr)
+
+  CALL MPI_Bcast(fu_next,nyp*nzp, MPI_DOUBLE_PRECISION,0,mpi_comm_world,ierr)
+  CALL MPI_Bcast(fv_next,nyp*nzp, MPI_DOUBLE_PRECISION,0,mpi_comm_world,ierr)
+  CALL MPI_Bcast(fw_next,nyp*nzp, MPI_DOUBLE_PRECISION,0,mpi_comm_world,ierr)
+
+ENDIF
         !assigns the value in the remaning points of the plane y-z
         !via bicubic interpolation
  ZN200: DO zn=1,nzp,nzp/nc
@@ -306,21 +322,22 @@ YN300: DO yn=1,nyp,nyp/nc
         ENDDO YN300
         ENDDO ZN300
 
- !        MASTER then
+ !!       MASTER then
  !       address = 'Variables = "y","z","f1","f2","f3","f1n","f2n","f3n"'
- !       write(777,*) address
+ !       write(18+proc_id,*) address
  !       address = 'ZONE I=1234 J=1234'
  !       write(address(08:11),1001) nyp
  !       write(address(15:18),1001) nzp
  ! 1001  format(i4.4)
- !       write(777,*) address
+ !       write(18+proc_id,*) address
  !       do 4000 z=1,nzp
  !       do 4000 y=1,nyp
- !       write(777,*)float(y),float(z),fu_prev(y,z),fv_prev(y,z),fw_prev(y,z),&
+ !       write(18+proc_id,*)float(y),float(z),fu_prev(y,z),fv_prev(y,z),fw_prev(y,z),&
  !            fu_next(y,z),fv_next(y,z),fw_next(y,z)
  ! 4000  continue
- !       stop
- !     endif
+ !      CALL_BARRIER
+ !      CALL MPI_abort
+ !!     endif
 END SUBROUTINE GRID_forcing_init
 !!!. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
@@ -344,14 +361,15 @@ implicit none
  dz=REAL(nc,KIND=rk)/REAL(nzp,KIND=rk)
 
  !After dt_forc iterations updates f_next with new values and put the old ones in f_prev
-      print *,'adv'
  IF ((it/=1).AND.(MOD(it-1_ik,dt_forc)==0_ik)) THEN
   fu_prev=fu_next
   fv_prev=fv_next
   fw_prev=fw_next
-
+  CALL_BARRIER
+  MASTER PRINT *,'Forcing update'
   !fills the grid nodes (nodes with assigned forcing value)
   !with a random value between f_amp and - f_amp
+  IF (proc_id==0) THEN
   ZL100: DO zn=1,nzp,nzp/nc
   YL100: DO yn=1,nyp,nyp/nc
           CALL random_number(u_rand)
@@ -363,6 +381,15 @@ implicit none
          ENDDO YL100
          ENDDO ZL100
  ENDIF
+ ! CALL MPI_Bcast(fu_prev,nyp*nzp, MPI_DOUBLE_PRECISION,0,mpi_comm_world,ierr)
+ ! CALL MPI_Bcast(fv_prev,nyp*nzp, MPI_DOUBLE_PRECISION,0,mpi_comm_world,ierr)
+ ! CALL MPI_Bcast(fw_prev,nyp*nzp, MPI_DOUBLE_PRECISION,0,mpi_comm_world,ierr)
+
+ CALL MPI_Bcast(fu_next,nyp*nzp, MPI_DOUBLE_PRECISION,0,mpi_comm_world,ierr)
+ CALL MPI_Bcast(fv_next,nyp*nzp, MPI_DOUBLE_PRECISION,0,mpi_comm_world,ierr)
+ CALL MPI_Bcast(fw_next,nyp*nzp, MPI_DOUBLE_PRECISION,0,mpi_comm_world,ierr)
+ ENDIF
+
 
 
  ZN200: DO zn=1,nzp,nzp/nc
@@ -486,20 +513,24 @@ implicit none
   fw=t_weight(1)*fw_prev+t_weight(2)*fw_next
 
 
- ! ! if (it==31) then
- !   MASTER then
- !       address = 'Variables = "y","z","f1","f2","f3"'
- !       write(777,*) address
- !       address = 'ZONE I=1234 J=1234'
- !       write(address(08:11),1001) nyp
- !       write(address(15:18),1001) nzp
- ! 1001  format(i4.4)
- !       write(777,*) address
- !       do 4000 z=1,nzp
- !       do 4000 y=1,nyp
- !       write(777,*)float(y),float(z),fu(y,z),fv(y,z),fw(y,z)
- ! 4000  continue
- !       stop
+ ! if (it==31) then
+ ! !   MASTER then
+ IF ((it/=1).AND.(MOD(it-1_ik,dt_forc)==0_ik)) THEN
+       address = 'Variables = "y","z","f1","f2","f3"'
+       write(18+proc_id,*) address
+       address = 'ZONE I=1234 J=1234'
+       write(address(08:11),1001) nyp
+       write(address(15:18),1001) nzp
+ 1001  format(i4.4)
+       write(18+proc_id,*) address
+       do 4000 z=1,nzp
+       do 4000 y=1,nyp
+       write(18+proc_id,*)float(y),float(z),fu_next(y,z),fv_next(y,z),fw_next(y,z)
+ 4000  continue
+      CALL_BARRIER
+      CALL MPI_abort
+    endif
+ ! !       stop
  ! endif
 
 
