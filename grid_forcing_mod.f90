@@ -9,7 +9,6 @@ USE variables_mod
 USE MPI_mod
 implicit none
 #INCLUDE 'fpp_macros.h'   !!#INCLUDE fpp macros
-INTEGER(KIND=ik)                         :: RSS
 CONTAINS
 
 !!!. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -22,18 +21,24 @@ SUBROUTINE GRID_forcing_init
  REAL(KIND=rk),DIMENSION(3)              :: ao,an,as,ak
  REAL(KIND=rk)                           :: u_rand,v_rand,w_rand
  REAL(KIND=rk)                           :: dy,dz
- REAL(KIND=rk)                           :: yy,zz !position in the grid
+ REAL(KIND=rk)                           :: yy,zz,ii !position in the grid
  INTEGER                                 :: y,z,yn,zn !y,z: mesh,yn,zn: grid
-  character(len=100)                      :: address !for printing out test forcing distribution
+  character(len=100)                     :: address !for printing out test forcing distribution
  !grid steps
  dy=REAL(nc,KIND=rk)/REAL(nyp,KIND=rk)
  dz=REAL(nc,KIND=rk)/REAL(nzp,KIND=rk)
 
 !!TODO fix seeding
-! RSS=2
-! MASTER CALL random_seed(size=RSS)
-! MASTER CALL random_seed(put=[seed(1),seed(1)])
-
+MASTER THEN
+CALL random_seed(size=seed_size)
+ALLOCATE(seed(1:seed_size))
+print *,'seed size',seed_size
+seed(1)=seed_init
+DO ii=2,seed_size
+seed(ii)=seed(ii-1)+ii
+ENDDO
+CALL random_seed(put=seed)
+ENDIF
  !forcing startup (sets first couple f_prev/f_next)
 IF (it==0) THEN
  ! ZL100: DO zn=1,nzp,nzp/nc
@@ -515,21 +520,21 @@ implicit none
 
  ! if (it==31) then
  ! !   MASTER then
- IF ((it/=1).AND.(MOD(it-1_ik,dt_forc)==0_ik)) THEN
-       address = 'Variables = "y","z","f1","f2","f3"'
-       write(18+proc_id,*) address
-       address = 'ZONE I=1234 J=1234'
-       write(address(08:11),1001) nyp
-       write(address(15:18),1001) nzp
- 1001  format(i4.4)
-       write(18+proc_id,*) address
-       do 4000 z=1,nzp
-       do 4000 y=1,nyp
-       write(18+proc_id,*)float(y),float(z),fu_next(y,z),fv_next(y,z),fw_next(y,z)
- 4000  continue
-      CALL_BARRIER
-      CALL MPI_abort
-    endif
+ ! IF ((it/=1).AND.(MOD(it-1_ik,dt_forc)==0_ik)) THEN
+ !       address = 'Variables = "y","z","f1","f2","f3"'
+ !       write(18+proc_id,*) address
+ !       address = 'ZONE I=1234 J=1234'
+ !       write(address(08:11),1001) nyp
+ !       write(address(15:18),1001) nzp
+ ! 1001  format(i4.4)
+ !       write(18+proc_id,*) address
+ !       do 4000 z=1,nzp
+ !       do 4000 y=1,nyp
+ !       write(18+proc_id,*)float(y),float(z),fu_next(y,z),fv_next(y,z),fw_next(y,z)
+ ! 4000  continue
+ !      CALL_BARRIER
+ !      CALL MPI_abort
+ !    endif
  ! !       stop
  ! endif
 

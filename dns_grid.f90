@@ -1,16 +1,16 @@
 !=======================================================================
 !! TODO Clean,comment and explain
-!! TODO Parallel grid_forcing (check random number generation)
-!! FIXME:: seems to produce different numbers in serial at the first call
 !! TODO Parrallel IO
 !! TODO De-aliasing
 !! TODO remove fft_mod
+!! TODO Add restart
 !! TODO way to avoid first r2c transform in MPI_initialize
 !! TODO change x_loc,y_loc,z_loc in something more readable (preprocessor?)
 !! TODO PPRINT statement for text and numbers
-!! TODO Alvelious?
+!! TODO polymers
 !! TODO Deallocate and free memory
 !! TODO Explicit interface for linear and prhs per accettare qualsisi tipo di input
+!! TODO Alvelious?
 !=======================================================================
 PROGRAM dns_grid
 USE parameters_mod                                !! PAR
@@ -39,9 +39,7 @@ CALL VAR_wave_numbers
 CALL TA_rk_initialize
 CALL VAR_dealiased_indeces   !! FIXME To be removed
 CALL GRID_forcing_init
-RSS=2
-MASTER CALL random_seed(size=RSS)
-MASTER CALL random_seed(put=[seed(1),seed(1)])
+
 
 t=REAL(itmin,KIND=rk)*dt
 it=0
