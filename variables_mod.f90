@@ -17,7 +17,9 @@ REAL(KIND=rk)                                  :: f_amp
 REAL(KIND=rk)                                  :: t_forz
 REAL(KIND=rk)                                  :: thick
 REAL(KIND=RK),DIMENSION(2)                     :: t_weight
-
+INTEGER(KIND=ik),DIMENSION(:),ALLOCATABLE      :: seed
+INTEGER(KIND=ik)                               :: seed_size
+INTEGER(KIND=ik)                               :: seed_init
 
 !!  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
 !! Problem variables
@@ -30,7 +32,6 @@ COMPLEX(C_DOUBLE_COMPLEX), dimension(:,:,:,:),ALLOCATABLE     ::puu_C
 ! COMPLEX(C_DOUBLE_COMPLEX), dimension(:,:,:,:),ALLOCATABLE      ::pcc_C
 REAL(KIND=rk)                                  :: sigma,al
 
-INTEGER(KIND=ik),DIMENSION(12)                 :: seed
 INTEGER(KIND=ik)                               :: rk_steps
 INTEGER(KIND=ik)                               :: i_couple
 REAL(KIND=rk)                                  :: Re
@@ -78,7 +79,7 @@ OPEN(unit=1,file='sim_par.dat',status='unknown')
        READ(1,*)  dt
        READ(1,*)  rk_steps
        READ(1,*)  f_amp
-       READ(1,*)  seed(1)
+       READ(1,*)  seed_init
        READ(1,*)  t_forz
        READ(1,*)  nc
        READ(1,*)  thick
@@ -106,7 +107,7 @@ it_wrt=itmin+it_out
  write(*,*) 'Re:',Re
  write(*,*) 'dt',dt
  write(*,*) 'f amp',f_amp
- write(*,*) 'seeding',seed(1)
+ write(*,*) 'seeding',seed_init
  write(*,*) 'it mx/min', itmax,'/',itmin
  write(*,*) 'it out', it_wrt
  write(*,*) 'n_step', rk_steps

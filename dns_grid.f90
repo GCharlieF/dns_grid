@@ -11,6 +11,8 @@
 !! TODO Deallocate and free memory
 !! TODO Explicit interface for linear and prhs per accettare qualsisi tipo di input
 !! TODO Alvelious?
+!! TODO KIND check and if necessary lock them
+!! Required libraires:: FFTW(no mpi required), OPENMPI,P3DFFT(same compiler as rest of the code and openmpi )
 !=======================================================================
 PROGRAM dns_grid
 USE parameters_mod                                !! PAR
