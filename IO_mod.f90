@@ -5,7 +5,8 @@ MODULE IO_mod
  USE parameters_mod
  USE variables_mod
  USE MPI_mod
- ! USE fft_mod
+ use hdf5
+ USE h5util_mod
  implicit none
  INTEGER(KIND=ik),DIMENSION(:),ALLOCATABLE    	  ::ind_x,ind_y,ind_z
 REAL(KIND=rk),DIMENSION(:),ALLOCATABLE 		  ::xc,yc,zc
@@ -180,6 +181,55 @@ ENDIF
 
 END SUBROUTINE IO_write_velocity_field
 !!!.....................................................................
+!!!.....................................................................
+SUBROUTINE IO_write_hdf5_velocity_field(it)
+
+ IMPLICIT NONE
+  INTEGER(kind=IK)                         :: it
+  integer(hid_t)                           :: file
+  integer(hsize_t)                         :: gdims(3), goffset(3)
+  integer(hsize_t)                         :: ldims(3), loffset(3)
+  integer(hsize_t)                         :: dimm(3), current_dims(3)
+  integer                                  :: ndim, nrank, nsize, current_ndim
+
+   CALL p3dfft_btran_c2r_many (uu_C,Csize(1)*Csize(2)*Csize(3),uu, &
+               Rsize(1)*Rsize(2)*Rsize(3),3,'tff')
+
+
+  call h5util_init()
+	call h5util_create_file("h5test.h5")
+  call h5util_open_file("h5test.h5", file)
+  call h5util_put_attribute(file, "it", it)
+  call h5util_put_attribute(file, "Dims", (/nxp,nyp,nzp/))
+  call h5util_put_attribute(file, "Domain", (/xl,yl,zl/))
+
+  ndim          = 3
+  ldims         = shape(uu(:,:,:,2))
+  loffset       = 0
+  gdims         = ldims
+  gdims(ndim)   = ldims(ndim) * n_proc
+  goffset       = 0
+  goffset(ndim) = ldims(ndim) * proc_id
+  call h5util_create_dataset(file, "U", H5T_NATIVE_DOUBLE, ndim, gdims)
+  call h5util_create_dataset(file, "V", H5T_NATIVE_DOUBLE, ndim, gdims)
+  call h5util_create_dataset(file, "W", H5T_NATIVE_DOUBLE, ndim, gdims)
+  call h5util_write_dataset(file, "U", ndim, ldims, ldims, loffset, goffset, &
+       & reshape(uu(:,:,:,1), (/size(uu(:,:,:,1))/))  )
+  call h5util_write_dataset(file, "V", ndim, ldims, ldims, loffset, goffset, &
+       & reshape(uu(:,:,:,2), (/size(uu(:,:,:,2))/))  )
+  call h5util_write_dataset(file, "W", ndim, ldims, ldims, loffset, goffset, &
+       & reshape(uu(:,:,:,3), (/size(uu(:,:,:,3))/))  )
+  call h5util_close_file(file)
+  call h5util_finalize()
+
+
+
+   CALL p3dfft_ftran_r2c_many (uu,Rsize(1)*Rsize(2)*Rsize(3),uu_C, &
+               Csize(1)*Csize(2)*Csize(3),3,'fft')
+               uu_C=uu_C/REAL(nxp*nyp*nzp,KIND=rk)
+END SUBROUTINE IO_write_hdf5_velocity_field
+!!!.....................................................................
+
 
 END MODULE IO_mod
 

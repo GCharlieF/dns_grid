@@ -176,10 +176,6 @@ SUBROUTINE VAR_wave_numbers
 	kz(nz+2-kk) = CMPLX(0._rk,-(2._rk*pi/zl)*REAL(kk-1,KIND=rk))
  ENDDO
 
- ! write(18,*),kx
- ! write(19,*),ky
- ! write(20,*),kz
- ! stop
 END SUBROUTINE VAR_wave_numbers
 !!!. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 !!!. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -188,16 +184,14 @@ SUBROUTINE VAR_dealiased_indeces
  INTEGER(KIND=ik)                               ::ii
  DO ii=1,ny/2
    day(ii)=ii
-  !  print *,ii,day(ii)
+
  ENDDO
  DO ii=1,nz/2
    daz(ii)=ii
  ENDDO
  DO ii=ny/2+1,ny
    day(ii)=ii+al*ny/2
-    ! print *,ii,day(ii)
  ENDDO
- ! stop
  DO ii=nz/2+1,nz
    daz(ii)=ii+al*nz/2
  ENDDO

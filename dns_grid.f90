@@ -18,7 +18,7 @@ PROGRAM dns_grid
 USE parameters_mod                                !! PAR
 USE variables_mod                                 !! VAR
 USE MPI_mod                                       !! MPI
-USE fft_mod                                       !! FFT
+! USE fft_mod                                       !! FFT
 USE grid_forcing_mod                              !! GRID
 USE stats_and_probes_mod                          !! STATS
 ! USE hit_forcings_mod                              !! HIT
@@ -71,7 +71,7 @@ RK_LOOP:  DO n_k=1,rk_steps
           CALL TA_linear
 
           !! Write the velocity field every it_out time steps
-          ! IF (MOD(it-1,it_out)==0 .AND. n_k==1) CALL IO_write_velocity_field(it)
+          IF (MOD(it-1,it_out)==0 .AND. n_k==1) CALL IO_write_hdf5_velocity_field(it)
 
 ENDDO RK_LOOP
           ! dt=dt_new

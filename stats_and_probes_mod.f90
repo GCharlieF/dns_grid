@@ -5,7 +5,6 @@
 MODULE stats_and_probes_mod
  USE parameters_mod
  USE variables_mod
- ! USE fft_mod
  USE MPI_mod
  USE grid_forcing_mod
 
